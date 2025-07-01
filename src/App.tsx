@@ -7,9 +7,9 @@ import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimesta
 import type { Firestore } from 'firebase/firestore';
 
 // --- Importaciones de imágenes ---
-// Asume que has subido 'logo.png' y 'chibi.png' a la carpeta public/assets/
+// Asume que has subido 'logo.png' a la carpeta public/assets/
 import logo from '/assets/logo.png'; // Ruta relativa desde la raíz pública
-import chibi from '/assets/chibi.png'; // Ruta relativa desde la raíz pública
+// La importación de 'chibi' ha sido eliminada.
 
 
 // --- INTERFACES PARA TIPADO ESTRICTO ---
@@ -265,14 +265,12 @@ const App = () => {
 
             <main className="flex-1 p-4 md:p-8 flex flex-col justify-center">
                 <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-4xl mx-auto space-y-6">
-                    {/* **INICIO: Sección de Logo y Chibi ** */}
+                    {/* **INICIO: Sección de Logo ** */}
                     <div className="flex flex-col items-center justify-center mb-6">
                         {/* Logo */}
                         <img src={logo} alt="Logo de Linguo Traductor" className="h-16 md:h-20 mb-2" />
-                        {/* Muñeco Chibi */}
-                        <img src={chibi} alt="Muñeco Chibi de Linguo" className="h-24 md:h-32 mt-4" /> 
                     </div>
-                    {/* **FIN: Sección de Logo y Chibi ** */}
+                    {/* **FIN: Sección de Logo ** */}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
@@ -325,4 +323,4 @@ const App = () => {
     );
 };
 
-export default App; 
+export default App;
