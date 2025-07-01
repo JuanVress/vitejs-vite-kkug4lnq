@@ -111,7 +111,8 @@ const App = () => {
             recognitionInstance.lang = sourceLanguage;
             recognitionInstance.onstart = () => setIsListening(true);
             recognitionInstance.onend = () => setIsListening(false);
-            recognitionInstance.onresult = (event: any) => setInputText(event.results?[0]?.[0]?.transcript || '');
+            // CORRECCIÓN APLICADA AQUÍ EN LA LÍNEA 114
+            recognitionInstance.onresult = (event: any) => setInputText(event.results?.[0]?.[0]?.transcript || '');
             recognitionInstance.onerror = (event: any) => setError(`Error de voz: ${event.error}.`);
             recognition.current = recognitionInstance;
         }
@@ -298,7 +299,7 @@ const App = () => {
                     <button onClick={handleTranslate} disabled={isLoading || !inputText.trim() || !isAuthReady} className={`w-full py-2 px-4 rounded-xl text-white font-bold text-lg shadow-md transition-all ${isLoading || !inputText.trim() || !isAuthReady ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#be4c54] hover:bg-[#a83b42] transform hover:scale-105 active:scale-95'} mt-4`}> {/* Reducido padding y margen */}
                         {isLoading ? (<div className="flex items-center justify-center"><svg className="animate-spin h-4 w-4 mr-2 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Traduciendo...</div>) : ('Traducir')}
                     </button>
-                    {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mt-4 text-sm" role="alert"><strong className="font-bold">¡Error!</strong><span className="block sm:inline"> {error}</span></div>)} {/* Reducido tamaño de texto */}
+                    {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mt-4 text-sm" role="alert"><strong className="font-bold">¡Error!</strong><span className="block sm:inline"> {error}</span></div>)}
                 </div>
 
                 {/* **INICIO: Sección para la Publicidad ** */}
