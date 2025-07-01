@@ -269,7 +269,7 @@ const App = () => {
                 {/* **INICIO: Sección de Logo ** */}
                 {/* MODIFICADO: Posicionamiento para móvil y desktop. */}
                 <div className="absolute top-4 right-4 z-50 md:top-8 md:right-8"> {/* Ajusta top/right para móvil */}
-                    <img src={logo} alt="Logo de Linguo Traductor" className="h-20 md:h-64" /> {/* Ajusta tamaño para móvil */}
+                    <img src={logo} alt="Logo de Linguo Traductor" className="h-16 md:h-56" /> {/* Ajusta tamaño para móvil y desktop */}
                 </div>
                 {/* **FIN: Sección de Logo ** */}
 
