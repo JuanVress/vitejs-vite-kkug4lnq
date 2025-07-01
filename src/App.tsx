@@ -20,6 +20,7 @@ declare global {
     interface Window {
         SpeechRecognition: any;
         webkitSpeechRecognition: any;
+        adsbygoogle: any[]; // <--- ¡AÑADIDO: Tipado para la variable global de AdSense!
     }
 }
 
@@ -124,6 +125,32 @@ const App = () => {
         });
         return () => unsubscribe();
     }, [db, userId, isAuthReady]);
+
+    // **INICIO: Nuevo useEffect para cargar AdSense **
+    useEffect(() => {
+        // Esta función se asegura de que AdSense intenta cargar los anuncios.
+        // Se ejecuta después de que el componente App se haya montado.
+        const loadGoogleAds = () => {
+            if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
+                try {
+                    // Esta línea le dice a AdSense que hay un nuevo bloque de anuncios para rellenar.
+                    (window.adsbygoogle as any[]).push({});
+                    console.log("AdSense push triggered successfully."); // Para depuración
+                } catch (e) {
+                    console.error("Error al ejecutar adsbygoogle.push:", e);
+                }
+            } else {
+                console.warn("window.adsbygoogle no está disponible. Reintentando en 500ms...");
+                // Si AdSense no está listo, intenta de nuevo en un momento.
+                setTimeout(loadGoogleAds, 500); 
+            }
+        };
+
+        loadGoogleAds(); // Inicia el intento de carga
+
+        // No hay cleanup necesario para AdSense en este caso simple.
+    }, []); // Array de dependencias vacío, se ejecuta solo una vez al montar el componente.
+    // **FIN: Nuevo useEffect para cargar AdSense **
 
     // --- FUNCIONES ---
     const handleTranslate = async () => {
@@ -274,6 +301,20 @@ const App = () => {
                     </button>
                     {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mt-4" role="alert"><strong className="font-bold">¡Error!</strong><span className="block sm:inline"> {error}</span></div>)}
                 </div>
+
+                {/* **INICIO: Sección para la Publicidad ** */}
+                <div className="ad-container mt-8 p-4 bg-[#fff4e3] rounded-xl shadow-md w-full max-w-4xl mx-auto text-center">
+                    {/* Aquí se cargará el anuncio de AdSense */}
+                    {/* ¡IMPORTANTE! Reemplaza 'TU_ID_DE_SLOT' con tu ID real de bloque de AdSense */}
+                    <ins className="adsbygoogle"
+                         style={{ display: 'block', width: '100%', height: 'auto', minHeight: '90px' }} 
+                         data-ad-client="pub-3121401058916322" // ¡ID de Editor YA REEMPLAZADO!
+                         data-ad-slot="TU_ID_DE_SLOT"       // <-- ¡DEBES REEMPLAZAR ESTO CON TU ID DE SLOT REAL!
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                </div>
+                {/* **FIN: Sección para la Publicidad ** */}
+
             </main>
         </div>
     );
