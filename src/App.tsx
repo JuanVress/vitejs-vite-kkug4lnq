@@ -258,7 +258,8 @@ const App = () => {
                 </div>
             </aside>
 
-            <main className="flex-1 p-4 md:p-8 flex flex-col items-center">
+            {/* MODIFICADO: Ajustes en el main para el layout */}
+            <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48"> {/* Agregado md:items-start y un padding derecho en md:pr-48 */}
                 {/* **INICIO: Sección de Logo (FUERA DEL CONTENEDOR BLANCO) ** */}
                 {/* El logo está posicionado absolutamente en la esquina superior derecha */}
                 <div className="absolute top-8 right-8 z-50">
@@ -267,8 +268,8 @@ const App = () => {
                 {/* **FIN: Sección de Logo ** */}
 
                 {/* Contenedor principal para todo el contenido de la sección principal (ahora más compacto y desplazado a la izquierda) */}
-                {/* Incrementamos el margen derecho para moverlo más a la izquierda y quizás ajustamos max-w */}
-                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-4xl md:max-w-2xl mt-16 md:mt-24 space-y-4 md:mx-0 md:ml-auto md:mr-32">
+                {/* Modificado: Quitamos ml-auto/mr-X y usamos mx-auto o un ancho fijo para que quede bien */}
+                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-4xl md:max-w-xl mt-16 md:mt-24 space-y-4 md:mx-auto"> {/* Ajustado max-w y vuelto a mx-auto */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="source-lang" className="text-lg font-semibold text-[#785d56]">Idioma de Origen:</label>
