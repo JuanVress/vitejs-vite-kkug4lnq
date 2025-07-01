@@ -4,8 +4,7 @@ import type { FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import type { Auth } from 'firebase/auth';
 import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp, deleteDoc, orderBy } from 'firebase/firestore';
-// CORREGIDO: Eliminado '=>' de la importación de Firestore
-import type { Firestore } from 'firebase/firestore'; 
+import type { Firestore } from 'firebase/firestore';
 
 // --- Importaciones de imágenes ---
 import logo from '/assets/logo.png';
@@ -268,7 +267,8 @@ const App = () => {
                 {/* **FIN: Sección de Logo ** */}
 
                 {/* Contenedor principal para todo el contenido de la sección principal (ahora más compacto y desplazado a la izquierda) */}
-                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-4xl md:max-w-3xl mt-16 md:mt-24 space-y-4 md:mx-0 md:ml-auto md:mr-16">
+                {/* Incrementamos el margen derecho para moverlo más a la izquierda y quizás ajustamos max-w */}
+                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-4xl md:max-w-2xl mt-16 md:mt-24 space-y-4 md:mx-0 md:ml-auto md:mr-32">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="source-lang" className="text-lg font-semibold text-[#785d56]">Idioma de Origen:</label>
