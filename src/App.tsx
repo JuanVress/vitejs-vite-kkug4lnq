@@ -6,6 +6,10 @@ import type { Auth } from 'firebase/auth';
 import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp, deleteDoc, orderBy } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 
+// --- Importaciones de imágenes ---
+import logo from '/assets/logo.png';
+import historyImage from '/assets/history-chibi.png'; // Asegúrate de que esta ruta sea correcta
+
 // --- INTERFACES PARA TIPADO ESTRICTO ---
 interface HistoryItem {
   id: string;
@@ -20,6 +24,7 @@ declare global {
     interface Window {
         SpeechRecognition: any;
         webkitSpeechRecognition: any;
+        adsbygoogle: any[];
     }
 }
 
@@ -97,7 +102,7 @@ const App = () => {
             }
         };
     }, []);
-    
+
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
@@ -107,23 +112,41 @@ const App = () => {
             recognitionInstance.lang = sourceLanguage;
             recognitionInstance.onstart = () => setIsListening(true);
             recognitionInstance.onend = () => setIsListening(false);
-            recognitionInstance.onresult = (event: any) => setInputText(event.results[0][0].transcript);
+            recognitionInstance.onresult = (event: any) => setInputText(event.results?.[0]?.[0]?.transcript || '');
             recognitionInstance.onerror = (event: any) => setError(`Error de voz: ${event.error}.`);
             recognition.current = recognitionInstance;
         }
     }, [sourceLanguage]);
-    
+
     useEffect(() => {
         if (!isAuthReady || !db || !userId) return;
         const historyRef = collection(db, `artifacts/${appId}/users/${userId}/translationHistory`);
         const q = query(historyRef, orderBy('timestamp', 'desc'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             setTranslationHistory(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as HistoryItem)));
-        }, (_err) => { // Se usa _err para indicar que no se usa y evitar el error
+        }, (_err) => {
             setError("Error al cargar el historial.");
         });
         return () => unsubscribe();
     }, [db, userId, isAuthReady]);
+
+    useEffect(() => {
+        const loadGoogleAds = () => {
+            if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
+                try {
+                    (window.adsbygoogle as any[]).push({});
+                    console.log("AdSense push triggered successfully.");
+                } catch (e) {
+                    console.error("Error al ejecutar adsbygoogle.push:", e);
+                }
+            } else {
+                console.warn("window.adsbygoogle no está disponible. Reintentando en 500ms...");
+                setTimeout(loadGoogleAds, 500);
+            }
+        };
+
+        loadGoogleAds();
+    }, []);
 
     // --- FUNCIONES ---
     const handleTranslate = async () => {
@@ -161,7 +184,7 @@ const App = () => {
             } else {
                  throw new Error('No se pudo obtener una traducción de la respuesta de la API.');
             }
-        } catch (err: unknown) { // Se especifica el tipo 'unknown'
+        } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : String(err);
             console.error('Error al traducir:', err);
             setError(`Error de traducción: ${errorMessage}`);
@@ -173,12 +196,12 @@ const App = () => {
     const handleSpeak = () => {
         if (!translatedText || !window.speechSynthesis) return;
         if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
-        
+
         setIsSpeaking(true);
         const utterance = new SpeechSynthesisUtterance(translatedText);
         utterance.lang = targetLanguage;
         const foundVoice = voices.find(v => v.lang.startsWith(targetLanguage));
-        utterance.voice = foundVoice || null; // Se maneja el caso de undefined
+        utterance.voice = foundVoice || null;
         utterance.onend = () => setIsSpeaking(false);
         utterance.onerror = () => {
             setError('Error al reproducir el audio.');
@@ -186,7 +209,7 @@ const App = () => {
         };
         window.speechSynthesis.speak(utterance);
     };
-    
+
     const handleSpeechInput = () => {
         if (!recognition.current) return setError('El reconocimiento de voz no está disponible.');
         if (isListening) {
@@ -215,11 +238,11 @@ const App = () => {
     return (
         <div className="min-h-screen flex flex-col md:flex-row bg-[#e6d5c1] font-sans text-[#785d56]">
             <style>{`@font-face{font-family:'Fragmentcore';src:url('/fonts/Fragmentcore.otf') format('opentype');} body{font-family:'Fragmentcore',sans-serif;} .custom-scrollbar::-webkit-scrollbar{width:8px;} .custom-scrollbar::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px;} .custom-scrollbar::-webkit-scrollbar-thumb{background:#c6b299;border-radius:10px;} .custom-scrollbar::-webkit-scrollbar-thumb:hover{background:#be4c54;}`}</style>
-            
+
             <aside className="w-full md:w-1/4 bg-[#fff4e3] p-4 md:p-6 shadow-lg flex flex-col rounded-b-2xl md:rounded-r-2xl md:rounded-bl-none overflow-hidden">
                 <h2 className="text-2xl font-bold mb-4 text-[#785d56]">Historial</h2>
                 <div className="flex-grow overflow-y-auto custom-scrollbar">
-                    {!isAuthReady ? (<p className="text-gray-500 text-center mt-4">Cargando...</p>) : 
+                    {!isAuthReady ? (<p className="text-gray-500 text-center mt-4">Cargando...</p>) :
                     translationHistory.length > 0 ? (
                         <ul className="space-y-3">
                             {translationHistory.map((item: HistoryItem) => (
@@ -234,46 +257,73 @@ const App = () => {
                         </ul>
                     ) : ( <p className="text-gray-500 text-center mt-4">No hay historial.</p> )}
                 </div>
+                {/* INICIO: Nueva imagen en la parte inferior central del historial */}
+                <div className="mt-auto pt-4 text-center">
+                    <img src={historyImage} alt="Imagen de Historial" className="h-32 mx-auto" />
+                </div>
+                {/* FIN: Nueva imagen en el historial */}
             </aside>
 
-            <main className="flex-1 p-4 md:p-8 flex flex-col justify-center">
-                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-4xl mx-auto space-y-6">
-                    <h1 className="text-4xl md:text-5xl font-extrabold text-center text-[#785d56] mb-6 drop-shadow-lg">
-                        Linguo <span className="text-[#be4c54]">Traductor</span>
-                    </h1>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* MODIFICADO: Ajustes en el main para el layout. Eliminamos el pr-48 aquí para móvil */}
+            <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48 relative"> {/* Añadimos 'relative' al main */}
+                {/* **INICIO: Sección de Logo ** */}
+                {/* MODIFICADO: Posicionamiento para móvil y desktop. */}
+                <div className="absolute top-4 right-4 z-50 md:top-8 md:right-8"> {/* Ajusta top/right para móvil */}
+                    <img src={logo} alt="Logo de Linguo Traductor" className="h-20 md:h-64" /> {/* Ajusta tamaño para móvil */}
+                </div>
+                {/* **FIN: Sección de Logo ** */}
+
+                {/* Contenedor principal para todo el contenido de la sección principal (traductor) */}
+                {/* MODIFICADO: Añadimos un padding top para móvil para que el logo no se superponga */}
+                {/* Ajustamos max-w-full para móvil y max-w-4xl para desktop */}
+                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-full md:max-w-4xl mt-24 md:mt-24 space-y-4 md:mx-auto"> {/* Ajustado mt-24 para móvil */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="source-lang" className="text-lg font-semibold text-[#785d56]">Idioma de Origen:</label>
-                            <select id="source-lang" value={sourceLanguage} onChange={(e) => setSourceLanguage(e.target.value)} className="w-full mt-2 p-3 border border-[#c6b299] rounded-lg focus:ring-2 focus:ring-[#be4c54] transition bg-[#e6d5c1] text-[#785d56] cursor-pointer">
+                            <select id="source-lang" value={sourceLanguage} onChange={(e) => setSourceLanguage(e.target.value)} className="w-full mt-2 p-2 border border-[#c6b299] rounded-lg focus:ring-2 focus:ring-[#be4c54] transition bg-[#e6d5c1] text-[#785d56] cursor-pointer text-sm">
                                 {languages.map((lang) => <option key={lang.code} value={lang.code}>{lang.name}</option>)}
                             </select>
-                            <div className="relative mt-4">
-                                <textarea className="w-full h-40 p-4 border border-[#c6b299] rounded-lg focus:ring-2 focus:ring-[#be4c54] resize-none bg-[#fff4e3] text-[#785d56] placeholder-[#785d56]/70 pr-10" placeholder="Escribe o dicta el texto aquí..." value={inputText} onChange={(e) => setInputText(e.target.value)}></textarea>
-                                <button onClick={handleSpeechInput} disabled={!recognition.current || isListening} className={`absolute top-3 right-3 p-2 rounded-full shadow-md transition-all ${!recognition.current || isListening ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#be4c54] text-white hover:bg-[#a83b42]'}`} aria-label={isListening ? "Detener dictado" : "Iniciar dictado"}>
-                                    {isListening ? <svg className="w-6 h-6 animate-pulse" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM9 9h6v6H9z"/></svg> : <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.2-3c0 3-2.54 5.1-5.2 5.1S6.8 14 6.8 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.8z"/></svg>}
+                            <div className="relative mt-2">
+                                <textarea className="w-full h-36 p-2 border border-[#c6b299] rounded-lg focus:ring-2 focus:ring-[#be4c54] resize-none bg-[#fff4e3] text-[#785d56] placeholder-[#785d56]/70 pr-10 text-sm" placeholder="Escribe o dicta el texto aquí..." value={inputText} onChange={(e) => setInputText(e.target.value)}></textarea>
+                                <button onClick={handleSpeechInput} disabled={!recognition.current || isListening} className={`absolute top-1 right-1 p-1 rounded-full shadow-md transition-all ${!recognition.current || isListening ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#be4c54] text-white hover:bg-[#a83b42]'} w-5 h-5 flex items-center justify-center`} aria-label={isListening ? "Detener dictado" : "Iniciar dictado"}>
+                                    {isListening ? <svg className="w-3 h-3 animate-pulse" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM9 9h6v6H9z"/></svg> : <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.2-3c0 3-2.54 5.1-5.2 5.1S6.8 14 6.8 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.8z"/></svg>}
                                 </button>
                             </div>
                         </div>
                         <div>
                             <label htmlFor="target-lang" className="text-lg font-semibold text-[#785d56]">Idioma de Destino:</label>
-                            <select id="target-lang" value={targetLanguage} onChange={(e) => setTargetLanguage(e.target.value)} className="w-full mt-2 p-3 border border-[#c6b299] rounded-lg focus:ring-2 focus:ring-[#be4c54] transition bg-[#e6d5c1] text-[#785d56] cursor-pointer">
+                            <select id="target-lang" value={targetLanguage} onChange={(e) => setTargetLanguage(e.target.value)} className="w-full mt-2 p-2 border border-[#c6b299] rounded-lg focus:ring-2 focus:ring-[#be4c54] transition bg-[#e6d5c1] text-[#785d56] cursor-pointer text-sm">
                                 {languages.map((lang) => <option key={lang.code} value={lang.code}>{lang.name}</option>)}
                             </select>
-                            <div className="relative mt-4">
-                                <div className="w-full h-40 p-4 border border-[#c6b299] rounded-lg bg-[#e6d5c1] text-[#785d56] overflow-y-auto pr-10">
+                            <div className="relative mt-2">
+                                <div className="w-full h-36 p-2 border border-[#c6b299] rounded-lg bg-[#e6d5c1] text-[#785d56] overflow-y-auto pr-10 text-sm">
                                     {translatedText || <span className="text-[#785d56]/70">La traducción aparecerá aquí...</span>}
                                 </div>
-                                <button onClick={handleSpeak} disabled={!translatedText || isSpeaking} className={`absolute top-3 right-3 p-2 rounded-full shadow-md transition-all ${!translatedText || isSpeaking ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#be4c54] text-white hover:bg-[#a83b42]'}`} aria-label={isSpeaking ? "Detener audio" : "Reproducir traducción"}>
-                                    {isSpeaking ? <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg> : <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.98 7-4.66 7-8.77s-2.99-7.79-7-8.77z"/></svg>}
+                                <button onClick={handleSpeak} disabled={!translatedText || isSpeaking} className={`absolute top-1 right-1 p-1 rounded-full shadow-md transition-all ${!translatedText || isSpeaking ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#be4c54] text-white hover:bg-[#a83b42]'} w-5 h-5 flex items-center justify-center`} aria-label={isSpeaking ? "Detener audio" : "Reproducir traducción"}>
+                                    {isSpeaking ? <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg> : <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.98 7-4.66 7-8.77s-2.99-7.79-7-8.77z"/></svg>}
                                 </button>
                             </div>
                         </div>
                     </div>
-                    <button onClick={handleTranslate} disabled={isLoading || !inputText.trim() || !isAuthReady} className={`w-full py-3 px-6 rounded-xl text-white font-bold text-lg shadow-md transition-all ${isLoading || !inputText.trim() || !isAuthReady ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#be4c54] hover:bg-[#a83b42] transform hover:scale-105 active:scale-95'}`}>
-                        {isLoading ? (<div className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Traduciendo...</div>) : ('Traducir')}
+                    <button onClick={handleTranslate} disabled={isLoading || !inputText.trim() || !isAuthReady} className={`w-full py-2 px-4 rounded-xl text-white font-bold text-lg shadow-md transition-all ${isLoading || !inputText.trim() || !isAuthReady ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#be4c54] hover:bg-[#a83b42] transform hover:scale-105 active:scale-95'} mt-4`}>
+                        {isLoading ? (<div className="flex items-center justify-center"><svg className="animate-spin h-4 w-4 mr-2 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Traduciendo...</div>) : ('Traducir')}
                     </button>
-                    {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mt-4" role="alert"><strong className="font-bold">¡Error!</strong><span className="block sm:inline"> {error}</span></div>)}
+                    {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mt-4 text-sm" role="alert"><strong className="font-bold">¡Error!</strong><span className="block sm:inline"> {error}</span></div>)}
                 </div>
+
+                {/* **INICIO: Sección para la Publicidad ** */}
+                {/* Aseguramos que el max-w sea full en móvil y 4xl en desktop */}
+                {/* Eliminamos el cálculo complejo de min-h y usamos un valor más simple, o lo dejamos que el ad se autoajuste */}
+                <div className="ad-container mt-8 p-4 bg-[#fff4e3] rounded-xl shadow-md w-full max-w-full md:max-w-4xl mx-auto text-center min-h-[18rem]"> {/* min-h-72 (18rem) es un buen punto de partida, ajusta según el tamaño de tu anuncio */}
+                    <ins className="adsbygoogle"
+                         style={{ display: 'block', width: '100%', height: 'auto', minHeight: '90px' }}
+                         data-ad-client="pub-3121401058916322"
+                         data-ad-slot="4072799267"
+                         data-ad-format="auto"
+                         data-full-width-responsive="true"></ins>
+                </div>
+                {/* **FIN: Sección para la Publicidad ** */}
+
             </main>
         </div>
     );
