@@ -1,9 +1,29 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
+import type { FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import type { Auth } from 'firebase/auth';
 import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp, deleteDoc, orderBy } from 'firebase/firestore';
+import type { Firestore } from 'firebase/firestore';
 
-// CONFIGURACIÓN DE FIREBASE
+// --- INTERFACES PARA TIPADO ESTRICTO ---
+interface HistoryItem {
+  id: string;
+  originalText: string;
+  translatedText: string;
+  sourceLang: string;
+  targetLang: string;
+  timestamp?: any;
+}
+
+declare global {
+    interface Window {
+        SpeechRecognition: any;
+        webkitSpeechRecognition: any;
+    }
+}
+
+// --- CONFIGURACIÓN DE FIREBASE ---
 const firebaseConfig = {
     apiKey: "AIzaSyAdO3WZpgy2jZZ3PMkgjp1qPLMxRVmUbS8",
     authDomain: "linguovega.firebaseapp.com",
@@ -16,22 +36,23 @@ const firebaseConfig = {
 
 const appId = "linguo-app-produccion";
 
-// COMPONENTE PRINCIPAL
+// --- COMPONENTE PRINCIPAL ---
 const App = () => {
-    const [inputText, setInputText] = useState('');
-    const [translatedText, setTranslatedText] = useState('');
-    const [sourceLanguage, setSourceLanguage] = useState('es');
-    const [targetLanguage, setTargetLanguage] = useState('en');
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [isSpeaking, setIsSpeaking] = useState(false);
-    const [isListening, setIsListening] = useState(false);
-    const [voices, setVoices] = useState([]);
-    const recognition = useRef(null);
-    const [db, setDb] = useState(null);
-    const [userId, setUserId] = useState(null);
-    const [isAuthReady, setIsAuthReady] = useState(false);
-    const [translationHistory, setTranslationHistory] = useState([]);
+    // --- ESTADOS CON TIPOS EXPLÍCITOS ---
+    const [inputText, setInputText] = useState<string>('');
+    const [translatedText, setTranslatedText] = useState<string>('');
+    const [sourceLanguage, setSourceLanguage] = useState<string>('es');
+    const [targetLanguage, setTargetLanguage] = useState<string>('en');
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string>('');
+    const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+    const [isListening, setIsListening] = useState<boolean>(false);
+    const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+    const recognition = useRef<any>(null);
+    const [db, setDb] = useState<Firestore | null>(null);
+    const [userId, setUserId] = useState<string | null>(null);
+    const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
+    const [translationHistory, setTranslationHistory] = useState<HistoryItem[]>([]);
 
     const languages = [
         { code: 'en', name: 'Inglés' }, { code: 'es', name: 'Español' }, { code: 'fr', name: 'Francés' },
@@ -40,12 +61,13 @@ const App = () => {
         { code: 'ar', name: 'Árabe' }, { code: 'ru', name: 'Ruso' },
     ];
 
+    // --- EFECTOS (LÓGICA DE INICIALIZACIÓN) ---
     useEffect(() => {
         try {
-            const app = initializeApp(firebaseConfig);
+            const app: FirebaseApp = initializeApp(firebaseConfig);
             setDb(getFirestore(app));
-            const auth = getAuth(app);
-            const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            const auth: Auth = getAuth(app);
+            onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     setUserId(user.uid);
                 } else {
@@ -53,7 +75,6 @@ const App = () => {
                 }
                 setIsAuthReady(true);
             });
-            return () => unsubscribe();
         } catch (err) {
             console.error("Error initializing Firebase:", err);
             setError("Error al inicializar Firebase.");
@@ -61,10 +82,20 @@ const App = () => {
     }, []);
 
     useEffect(() => {
-        const loadVoices = () => setVoices(window.speechSynthesis.getVoices());
-        window.speechSynthesis.onvoiceschanged = loadVoices;
-        loadVoices();
-        return () => { window.speechSynthesis.onvoiceschanged = null; };
+        const loadVoices = () => {
+            if (typeof window.speechSynthesis !== 'undefined') {
+                setVoices(window.speechSynthesis.getVoices());
+            }
+        };
+        if (typeof window.speechSynthesis !== 'undefined') {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+            loadVoices();
+        }
+        return () => {
+            if (typeof window.speechSynthesis !== 'undefined') {
+                window.speechSynthesis.onvoiceschanged = null;
+            }
+        };
     }, []);
     
     useEffect(() => {
@@ -76,8 +107,8 @@ const App = () => {
             recognitionInstance.lang = sourceLanguage;
             recognitionInstance.onstart = () => setIsListening(true);
             recognitionInstance.onend = () => setIsListening(false);
-            recognitionInstance.onresult = (event) => setInputText(event.results[0][0].transcript);
-            recognitionInstance.onerror = (event) => setError(`Error de voz: ${event.error}.`);
+            recognitionInstance.onresult = (event: any) => setInputText(event.results[0][0].transcript);
+            recognitionInstance.onerror = (event: any) => setError(`Error de voz: ${event.error}.`);
             recognition.current = recognitionInstance;
         }
     }, [sourceLanguage]);
@@ -87,11 +118,14 @@ const App = () => {
         const historyRef = collection(db, `artifacts/${appId}/users/${userId}/translationHistory`);
         const q = query(historyRef, orderBy('timestamp', 'desc'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            setTranslationHistory(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-        }, (err) => setError("Error al cargar el historial."));
+            setTranslationHistory(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as HistoryItem)));
+        }, (_err) => { // Se usa _err para indicar que no se usa y evitar el error
+            setError("Error al cargar el historial.");
+        });
         return () => unsubscribe();
     }, [db, userId, isAuthReady]);
 
+    // --- FUNCIONES ---
     const handleTranslate = async () => {
         if (!inputText.trim()) return setError('Por favor, ingresa texto para traducir.');
         setIsLoading(true);
@@ -127,9 +161,10 @@ const App = () => {
             } else {
                  throw new Error('No se pudo obtener una traducción de la respuesta de la API.');
             }
-        } catch (err) {
+        } catch (err: unknown) { // Se especifica el tipo 'unknown'
+            const errorMessage = err instanceof Error ? err.message : String(err);
             console.error('Error al traducir:', err);
-            setError(`Error de traducción: ${err.message}`);
+            setError(`Error de traducción: ${errorMessage}`);
         } finally {
             setIsLoading(false);
         }
@@ -142,10 +177,10 @@ const App = () => {
         setIsSpeaking(true);
         const utterance = new SpeechSynthesisUtterance(translatedText);
         utterance.lang = targetLanguage;
-        utterance.voice = voices.find(v => v.lang.startsWith(targetLanguage));
+        const foundVoice = voices.find(v => v.lang.startsWith(targetLanguage));
+        utterance.voice = foundVoice || null; // Se maneja el caso de undefined
         utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = (e) => {
-            console.error('SpeechSynthesis error:', e);
+        utterance.onerror = () => {
             setError('Error al reproducir el audio.');
             setIsSpeaking(false);
         };
@@ -154,18 +189,21 @@ const App = () => {
     
     const handleSpeechInput = () => {
         if (!recognition.current) return setError('El reconocimiento de voz no está disponible.');
-        if (isListening) recognition.current.stop();
-        else recognition.current.start();
+        if (isListening) {
+            recognition.current.stop();
+        } else {
+            recognition.current.start();
+        }
     };
 
-    const handleDeleteHistoryItem = async (itemId) => {
+    const handleDeleteHistoryItem = async (itemId: string) => {
         if (!db || !userId) return;
         try {
             await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/translationHistory`, itemId));
         } catch (err) { setError("Error al eliminar la traducción."); }
     };
 
-    const loadHistoryItem = (item) => {
+    const loadHistoryItem = (item: HistoryItem) => {
         setInputText(item.originalText);
         setTranslatedText(item.translatedText);
         setSourceLanguage(item.sourceLang);
@@ -173,16 +211,18 @@ const App = () => {
         setError('');
     };
 
+    // --- RENDERIZADO DE LA INTERFAZ ---
     return (
         <div className="min-h-screen flex flex-col md:flex-row bg-[#e6d5c1] font-sans text-[#785d56]">
             <style>{`@font-face{font-family:'Fragmentcore';src:url('/fonts/Fragmentcore.otf') format('opentype');} body{font-family:'Fragmentcore',sans-serif;} .custom-scrollbar::-webkit-scrollbar{width:8px;} .custom-scrollbar::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px;} .custom-scrollbar::-webkit-scrollbar-thumb{background:#c6b299;border-radius:10px;} .custom-scrollbar::-webkit-scrollbar-thumb:hover{background:#be4c54;}`}</style>
+            
             <aside className="w-full md:w-1/4 bg-[#fff4e3] p-4 md:p-6 shadow-lg flex flex-col rounded-b-2xl md:rounded-r-2xl md:rounded-bl-none overflow-hidden">
                 <h2 className="text-2xl font-bold mb-4 text-[#785d56]">Historial</h2>
                 <div className="flex-grow overflow-y-auto custom-scrollbar">
                     {!isAuthReady ? (<p className="text-gray-500 text-center mt-4">Cargando...</p>) : 
                     translationHistory.length > 0 ? (
                         <ul className="space-y-3">
-                            {translationHistory.map((item) => (
+                            {translationHistory.map((item: HistoryItem) => (
                                 <li key={item.id} onClick={() => loadHistoryItem(item)} className="relative bg-[#e6d5c1] p-3 rounded-lg shadow-sm cursor-pointer hover:bg-[#c6b299] transition-all">
                                     <p className="font-semibold text-sm text-[#785d56] pr-6 truncate">{item.originalText}</p>
                                     <p className="text-xs text-[#be4c54] truncate pr-6">{item.translatedText}</p>
@@ -195,6 +235,7 @@ const App = () => {
                     ) : ( <p className="text-gray-500 text-center mt-4">No hay historial.</p> )}
                 </div>
             </aside>
+
             <main className="flex-1 p-4 md:p-8 flex flex-col justify-center">
                 <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-4xl mx-auto space-y-6">
                     <h1 className="text-4xl md:text-5xl font-extrabold text-center text-[#785d56] mb-6 drop-shadow-lg">
