@@ -7,10 +7,7 @@ import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimesta
 import type { Firestore } from 'firebase/firestore';
 
 // --- Importaciones de imágenes ---
-// Asume que has subido 'logo.png' a la carpeta public/assets/
-import logo from '/assets/logo.png'; // Ruta relativa desde la raíz pública
-// La importación de 'chibi' ha sido eliminada.
-
+import logo from '/assets/logo.png'; 
 
 // --- INTERFACES PARA TIPADO ESTRICTO ---
 interface HistoryItem {
@@ -26,7 +23,7 @@ declare global {
     interface Window {
         SpeechRecognition: any;
         webkitSpeechRecognition: any;
-        adsbygoogle: any[]; // <--- ¡AÑADIDO: Tipado para la variable global de AdSense!
+        adsbygoogle: any[]; 
     }
 }
 
@@ -126,19 +123,18 @@ const App = () => {
         const q = query(historyRef, orderBy('timestamp', 'desc'));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             setTranslationHistory(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as HistoryItem)));
-        }, (_err) => { // Se usa _err para indicar que no se usa y evitar el error
+        }, (_err) => { 
             setError("Error al cargar el historial.");
         });
         return () => unsubscribe();
     }, [db, userId, isAuthReady]);
 
-    // **INICIO: Nuevo useEffect para cargar AdSense **
     useEffect(() => {
         const loadGoogleAds = () => {
             if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
                 try {
                     (window.adsbygoogle as any[]).push({});
-                    console.log("AdSense push triggered successfully."); // Para depuración
+                    console.log("AdSense push triggered successfully."); 
                 } catch (e) {
                     console.error("Error al ejecutar adsbygoogle.push:", e);
                 }
@@ -150,7 +146,6 @@ const App = () => {
 
         loadGoogleAds(); 
     }, []); 
-    // **FIN: Nuevo useEffect para cargar AdSense **
 
     // --- FUNCIONES ---
     const handleTranslate = async () => {
@@ -188,7 +183,7 @@ const App = () => {
             } else {
                  throw new Error('No se pudo obtener una traducción de la respuesta de la API.');
             }
-        } catch (err: unknown) { // Se especifica el tipo 'unknown'
+        } catch (err: unknown) { 
             const errorMessage = err instanceof Error ? err.message : String(err);
             console.error('Error al traducir:', err);
             setError(`Error de traducción: ${errorMessage}`);
@@ -205,7 +200,7 @@ const App = () => {
         const utterance = new SpeechSynthesisUtterance(translatedText);
         utterance.lang = targetLanguage;
         const foundVoice = voices.find(v => v.lang.startsWith(targetLanguage));
-        utterance.voice = foundVoice || null; // Se maneja el caso de undefined
+        utterance.voice = foundVoice || null; 
         utterance.onend = () => setIsSpeaking(false);
         utterance.onerror = () => {
             setError('Error al reproducir el audio.');
@@ -265,16 +260,21 @@ const App = () => {
 
             <main className="flex-1 p-4 md:p-8 flex flex-col justify-center">
                 {/* Contenedor principal para todo el contenido de la sección principal */}
-                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-4xl mx-auto space-y-6">
+                {/* AÑADIDO: flex items-start para alinear elementos arriba, y flex-col md:flex-row para organizar */}
+                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-4xl mx-auto space-y-6 md:space-y-0 md:flex md:flex-wrap md:justify-between md:items-start">
+                    
                     {/* **INICIO: Sección de Logo ** */}
-                    {/* El logo ahora está posicionado absolutamente para estar en el centro superior y sobre otras capas */}
-                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 mt-4 z-50">
-                        <img src={logo} alt="Logo de Linguo Traductor" className="h-40 md:h-64" /> {/* Logo ahora más grande */}
+                    {/* MODIFICADO: Eliminamos posicionamiento absoluto para que fluya con el contenido */}
+                    {/* Añadido: order-last para colocarlo al final en móvil y desktop si usamos flex-wrap */}
+                    {/* Opcional: si quieres que sea un bloque separado que flote a la derecha, considera mb-6 md:mb-0 md:ml-auto */}
+                    <div className="w-full md:w-auto text-center md:text-right order-last md:order-none">
+                        <img src={logo} alt="Logo de Linguo Traductor" className="h-40 md:h-64 mx-auto md:mr-0" />
                     </div>
                     {/* **FIN: Sección de Logo ** */}
 
-                    {/* El resto del contenido principal se mantiene. Un margen superior para no chocar con el logo. */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-20 md:mt-24"> {/* Ajusta el mt-valor si el logo se superpone */}
+                    {/* Contenedor para los selectores de idioma y textareas */}
+                    {/* Ajustado: Eliminar mt-20/mt-24 y usar order-first para que aparezca primero antes del logo si usamos flex-wrap */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full md:w-3/4 order-first md:order-none"> 
                         <div>
                             <label htmlFor="source-lang" className="text-lg font-semibold text-[#785d56]">Idioma de Origen:</label>
                             <select id="source-lang" value={sourceLanguage} onChange={(e) => setSourceLanguage(e.target.value)} className="w-full mt-2 p-3 border border-[#c6b299] rounded-lg focus:ring-2 focus:ring-[#be4c54] transition bg-[#e6d5c1] text-[#785d56] cursor-pointer">
@@ -302,19 +302,20 @@ const App = () => {
                             </div>
                         </div>
                     </div>
-                    <button onClick={handleTranslate} disabled={isLoading || !inputText.trim() || !isAuthReady} className={`w-full py-3 px-6 rounded-xl text-white font-bold text-lg shadow-md transition-all ${isLoading || !inputText.trim() || !isAuthReady ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#be4c54] hover:bg-[#a83b42] transform hover:scale-105 active:scale-95'}`}>
+
+                    {/* Botón de traducir y error */}
+                    <button onClick={handleTranslate} disabled={isLoading || !inputText.trim() || !isAuthReady} className={`w-full py-3 px-6 rounded-xl text-white font-bold text-lg shadow-md transition-all ${isLoading || !inputText.trim() || !isAuthReady ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#be4c54] hover:bg-[#a83b42] transform hover:scale-105 active:scale-95'} mt-6 md:mt-0`}>
                         {isLoading ? (<div className="flex items-center justify-center"><svg className="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Traduciendo...</div>) : ('Traducir')}
                     </button>
                     {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mt-4" role="alert"><strong className="font-bold">¡Error!</strong><span className="block sm:inline"> {error}</span></div>)}
-                </div> {/* <--- Este es el div que se movió */}
+                </div> 
 
                 {/* **INICIO: Sección para la Publicidad ** */}
                 <div className="ad-container mt-8 p-4 bg-[#fff4e3] rounded-xl shadow-md w-full max-w-4xl mx-auto text-center">
-                    {/* Aquí se cargará el anuncio de AdSense */}
                     <ins className="adsbygoogle"
                          style={{ display: 'block', width: '100%', height: 'auto', minHeight: '90px' }} 
-                         data-ad-client="pub-3121401058916322" // ¡ID de Editor YA REEMPLAZADO!
-                         data-ad-slot="4072799267"       // ¡ID de Slot YA REEMPLAZADO!
+                         data-ad-client="pub-3121401058916322" 
+                         data-ad-slot="4072799267"       
                          data-ad-format="auto"
                          data-full-width-responsive="true"></ins>
                 </div>
