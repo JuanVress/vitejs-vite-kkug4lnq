@@ -275,8 +275,8 @@ const App = () => {
 
                 {/* Contenedor principal para todo el contenido de la sección principal (traductor) */}
                 {/* MODIFICADO: Añadimos un padding top para móvil para que el logo no se superponga */}
-                {/* Ajustamos max-w-full para móvil y max-w-4xl para desktop */}
-                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-full md:max-w-4xl mt-24 md:mt-24 space-y-4 md:mx-auto"> {/* Ajustado mt-24 para móvil */}
+                {/* Ajustamos max-w-full para móvil y max-w-5xl para desktop */}
+                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-full md:max-w-5xl mt-24 md:mt-24 space-y-4 md:mx-auto"> {/* Ajustado mt-24 para móvil */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="source-lang" className="text-lg font-semibold text-[#785d56]">Idioma de Origen:</label>
@@ -312,9 +312,8 @@ const App = () => {
                 </div>
 
                 {/* **INICIO: Sección para la Publicidad ** */}
-                {/* Aseguramos que el max-w sea full en móvil y 4xl en desktop */}
-                {/* Eliminamos el cálculo complejo de min-h y usamos un valor más simple, o lo dejamos que el ad se autoajuste */}
-                <div className="ad-container mt-8 p-4 bg-[#fff4e3] rounded-xl shadow-md w-full max-w-full md:max-w-4xl mx-auto text-center min-h-[18rem]"> {/* min-h-72 (18rem) es un buen punto de partida, ajusta según el tamaño de tu anuncio */}
+                {/* Aseguramos que el max-w sea full en móvil y 5xl en desktop */}
+                <div className="ad-container mt-8 p-4 bg-[#fff4e3] rounded-xl shadow-md w-full max-w-full md:max-w-5xl mx-auto text-center min-h-[18rem]">
                     <ins className="adsbygoogle"
                          style={{ display: 'block', width: '100%', height: 'auto', minHeight: '90px' }}
                          data-ad-client="pub-3121401058916322"
