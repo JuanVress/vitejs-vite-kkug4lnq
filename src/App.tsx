@@ -6,6 +6,12 @@ import type { Auth } from 'firebase/auth';
 import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp, deleteDoc, orderBy } from 'firebase/firestore';
 import type { Firestore } from 'firebase/firestore';
 
+// --- Importaciones de imágenes ---
+// Asume que has subido 'logo.png' y 'chibi.png' a la carpeta public/assets/
+import logo from '/assets/logo.png'; // Ruta relativa desde la raíz pública
+import chibi from '/assets/chibi.png'; // Ruta relativa desde la raíz pública
+
+
 // --- INTERFACES PARA TIPADO ESTRICTO ---
 interface HistoryItem {
   id: string;
@@ -128,12 +134,9 @@ const App = () => {
 
     // **INICIO: Nuevo useEffect para cargar AdSense **
     useEffect(() => {
-        // Esta función se asegura de que AdSense intenta cargar los anuncios.
-        // Se ejecuta después de que el componente App se haya montado.
         const loadGoogleAds = () => {
             if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
                 try {
-                    // Esta línea le dice a AdSense que hay un nuevo bloque de anuncios para rellenar.
                     (window.adsbygoogle as any[]).push({});
                     console.log("AdSense push triggered successfully."); // Para depuración
                 } catch (e) {
@@ -141,15 +144,12 @@ const App = () => {
                 }
             } else {
                 console.warn("window.adsbygoogle no está disponible. Reintentando en 500ms...");
-                // Si AdSense no está listo, intenta de nuevo en un momento.
                 setTimeout(loadGoogleAds, 500); 
             }
         };
 
-        loadGoogleAds(); // Inicia el intento de carga
-
-        // No hay cleanup necesario para AdSense en este caso simple.
-    }, []); // Array de dependencias vacío, se ejecuta solo una vez al montar el componente.
+        loadGoogleAds(); 
+    }, []); 
     // **FIN: Nuevo useEffect para cargar AdSense **
 
     // --- FUNCIONES ---
@@ -265,9 +265,15 @@ const App = () => {
 
             <main className="flex-1 p-4 md:p-8 flex flex-col justify-center">
                 <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-4xl mx-auto space-y-6">
-                    <h1 className="text-4xl md:text-5xl font-extrabold text-center text-[#785d56] mb-6 drop-shadow-lg">
-                        Linguo <span className="text-[#be4c54]">Traductor</span>
-                    </h1>
+                    {/* **INICIO: Sección de Logo y Chibi ** */}
+                    <div className="flex flex-col items-center justify-center mb-6">
+                        {/* Logo */}
+                        <img src={logo} alt="Logo de Linguo Traductor" className="h-16 md:h-20 mb-2" />
+                        {/* Muñeco Chibi */}
+                        <img src={chibi} alt="Muñeco Chibi de Linguo" className="h-24 md:h-32 mt-4" /> 
+                    </div>
+                    {/* **FIN: Sección de Logo y Chibi ** */}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label htmlFor="source-lang" className="text-lg font-semibold text-[#785d56]">Idioma de Origen:</label>
@@ -305,11 +311,10 @@ const App = () => {
                 {/* **INICIO: Sección para la Publicidad ** */}
                 <div className="ad-container mt-8 p-4 bg-[#fff4e3] rounded-xl shadow-md w-full max-w-4xl mx-auto text-center">
                     {/* Aquí se cargará el anuncio de AdSense */}
-                    {/* ¡IMPORTANTE! Reemplaza 'TU_ID_DE_SLOT' con tu ID real de bloque de AdSense */}
                     <ins className="adsbygoogle"
                          style={{ display: 'block', width: '100%', height: 'auto', minHeight: '90px' }} 
                          data-ad-client="pub-3121401058916322" // ¡ID de Editor YA REEMPLAZADO!
-                         data-ad-slot="4072799267"       // <-- ¡DEBES REEMPLAZAR ESTO CON TU ID DE SLOT REAL!
+                         data-ad-slot="4072799267"       // ¡ID de Slot YA REEMPLAZADO!
                          data-ad-format="auto"
                          data-full-width-responsive="true"></ins>
                 </div>
