@@ -268,7 +268,7 @@ const App = () => {
                     {/* **INICIO: Sección de Logo ** */}
                     {/* El logo ahora está posicionado absolutamente para estar en el centro superior y sobre otras capas */}
                     <div className="absolute top-0 left-1/2 transform -translate-x-1/2 mt-4 z-50"> 
-                        <img src={logo} alt="Logo de Linguo Traductor" className="h-100 md:h-10" />
+                        <img src={logo} alt="Logo de Linguo Traductor" className="h-100 md:h-20" />
                     </div>
                     {/* **FIN: Sección de Logo ** */}
 
