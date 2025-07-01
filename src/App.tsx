@@ -266,13 +266,14 @@ const App = () => {
             <main className="flex-1 p-4 md:p-8 flex flex-col justify-center">
                 <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-4xl mx-auto space-y-6">
                     {/* **INICIO: Sección de Logo ** */}
-                    <div className="flex flex-col items-center justify-center mb-6">
-                        {/* Logo */}
-                        <img src={logo} alt="Logo de Linguo Traductor" className="h-16 md:h-20 mb-2" />
+                    {/* El logo ahora está posicionado absolutamente para estar en el centro superior y sobre otras capas */}
+                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 mt-4 z-50"> 
+                        <img src={logo} alt="Logo de Linguo Traductor" className="h-16 md:h-20" />
                     </div>
                     {/* **FIN: Sección de Logo ** */}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* El resto del contenido principal se mantiene. Un margen superior para no chocar con el logo. */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-20 md:mt-24"> {/* Ajusta el mt-valor si el logo se superpone */}
                         <div>
                             <label htmlFor="source-lang" className="text-lg font-semibold text-[#785d56]">Idioma de Origen:</label>
                             <select id="source-lang" value={sourceLanguage} onChange={(e) => setSourceLanguage(e.target.value)} className="w-full mt-2 p-3 border border-[#c6b299] rounded-lg focus:ring-2 focus:ring-[#be4c54] transition bg-[#e6d5c1] text-[#785d56] cursor-pointer">
