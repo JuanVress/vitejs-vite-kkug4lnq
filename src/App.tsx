@@ -8,8 +8,7 @@ import type { Firestore } from 'firebase/firestore';
 
 // --- Importaciones de imágenes ---
 import logo from '/assets/logo.png';
-// Importa la nueva imagen para el historial. Asegúrate de que esta ruta sea correcta.
-import historyImage from '/assets/history-chibi.png'; // Cambia 'history-chibi.png' por la ruta real de tu imagen
+import historyImage from '/assets/history-chibi.png'; // Asegúrate de que esta ruta sea correcta
 
 // --- INTERFACES PARA TIPADO ESTRICTO ---
 interface HistoryItem {
@@ -259,24 +258,25 @@ const App = () => {
                     ) : ( <p className="text-gray-500 text-center mt-4">No hay historial.</p> )}
                 </div>
                 {/* INICIO: Nueva imagen en la parte inferior central del historial */}
-                <div className="mt-auto pt-4 text-center"> {/* mt-auto empuja al final, pt-4 para padding */}
-                    <img src={historyImage} alt="Imagen de Historial" className="h-32 mx-auto" /> {/* h-32 para el tamaño, mx-auto para centrar */}
+                <div className="mt-auto pt-4 text-center">
+                    <img src={historyImage} alt="Imagen de Historial" className="h-32 mx-auto" />
                 </div>
                 {/* FIN: Nueva imagen en el historial */}
             </aside>
 
-            {/* MODIFICADO: Ajustes en el main para el layout */}
-            <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48"> {/* Agregado md:items-start y un padding derecho en md:pr-48 */}
-                {/* **INICIO: Sección de Logo (FUERA DEL CONTENEDOR BLANCO) ** */}
-                {/* El logo está posicionado absolutamente en la esquina superior derecha */}
-                <div className="absolute top-8 right-8 z-50">
-                    <img src={logo} alt="Logo de Linguo Traductor" className="h-48 md:h-64" />
+            {/* MODIFICADO: Ajustes en el main para el layout. Eliminamos el pr-48 aquí para móvil */}
+            <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48 relative"> {/* Añadimos 'relative' al main */}
+                {/* **INICIO: Sección de Logo ** */}
+                {/* MODIFICADO: Posicionamiento para móvil y desktop. */}
+                <div className="absolute top-4 right-4 z-50 md:top-8 md:right-8"> {/* Ajusta top/right para móvil */}
+                    <img src={logo} alt="Logo de Linguo Traductor" className="h-20 md:h-64" /> {/* Ajusta tamaño para móvil */}
                 </div>
                 {/* **FIN: Sección de Logo ** */}
 
-                {/* Contenedor principal para todo el contenido de la sección principal (ahora más compacto y desplazado a la izquierda) */}
-                {/* Aumentado max-w para que sea más ancho */}
-                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-4xl md:max-w-4xl mt-16 md:mt-24 space-y-4 md:mx-auto">
+                {/* Contenedor principal para todo el contenido de la sección principal (traductor) */}
+                {/* MODIFICADO: Añadimos un padding top para móvil para que el logo no se superponga */}
+                {/* Ajustamos max-w-full para móvil y max-w-5xl para desktop */}
+                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-full md:max-w-5xl mt-24 md:mt-24 space-y-4 md:mx-auto"> {/* Ajustado mt-24 para móvil */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="source-lang" className="text-lg font-semibold text-[#785d56]">Idioma de Origen:</label>
@@ -284,7 +284,6 @@ const App = () => {
                                 {languages.map((lang) => <option key={lang.code} value={lang.code}>{lang.name}</option>)}
                             </select>
                             <div className="relative mt-2">
-                                {/* Altura de textarea */}
                                 <textarea className="w-full h-36 p-2 border border-[#c6b299] rounded-lg focus:ring-2 focus:ring-[#be4c54] resize-none bg-[#fff4e3] text-[#785d56] placeholder-[#785d56]/70 pr-10 text-sm" placeholder="Escribe o dicta el texto aquí..." value={inputText} onChange={(e) => setInputText(e.target.value)}></textarea>
                                 <button onClick={handleSpeechInput} disabled={!recognition.current || isListening} className={`absolute top-1 right-1 p-1 rounded-full shadow-md transition-all ${!recognition.current || isListening ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#be4c54] text-white hover:bg-[#a83b42]'} w-5 h-5 flex items-center justify-center`} aria-label={isListening ? "Detener dictado" : "Iniciar dictado"}>
                                     {isListening ? <svg className="w-3 h-3 animate-pulse" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM9 9h6v6H9z"/></svg> : <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.2-3c0 3-2.54 5.1-5.2 5.1S6.8 14 6.8 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.49 6-3.31 6-6.72h-1.8z"/></svg>}
@@ -297,7 +296,6 @@ const App = () => {
                                 {languages.map((lang) => <option key={lang.code} value={lang.code}>{lang.name}</option>)}
                             </select>
                             <div className="relative mt-2">
-                                {/* Altura de traducción */}
                                 <div className="w-full h-36 p-2 border border-[#c6b299] rounded-lg bg-[#e6d5c1] text-[#785d56] overflow-y-auto pr-10 text-sm">
                                     {translatedText || <span className="text-[#785d56]/70">La traducción aparecerá aquí...</span>}
                                 </div>
@@ -314,10 +312,8 @@ const App = () => {
                 </div>
 
                 {/* **INICIO: Sección para la Publicidad ** */}
-                {/* Aumentado el max-w para que sea más ancho */}
-                {/* Ajustado min-h para que coincida con el nuevo tamaño del recuadro superior */}
-                <div className="ad-container mt-8 p-4 bg-[#fff4e3] rounded-xl shadow-md w-full max-w-4xl md:max-w-4xl mx-auto text-center min-h-[calc(theme(height.36)*2 + theme(spacing.4)*2 + theme(spacing.2)*2 + theme(fontSize.sm)*2 + theme(spacing.2) + theme(height.12) + theme(spacing.4))]">
-                    {/* El cálculo se ha ajustado para incluir la altura del botón de traducir y su margen. */}
+                {/* Aseguramos que el max-w sea full en móvil y 5xl en desktop */}
+                <div className="ad-container mt-8 p-4 bg-[#fff4e3] rounded-xl shadow-md w-full max-w-full md:max-w-5xl mx-auto text-center min-h-[18rem]">
                     <ins className="adsbygoogle"
                          style={{ display: 'block', width: '100%', height: 'auto', minHeight: '90px' }}
                          data-ad-client="pub-3121401058916322"
