@@ -268,10 +268,10 @@ const App = () => {
                     {/* **INICIO: Sección de Logo ** */}
                     {/* El logo ahora está posicionado absolutamente para estar en el centro superior y sobre otras capas */}
                     <div className="absolute top-0 left-1/2 transform -translate-x-1/2 mt-4 z-50"> 
-                        <img src={logo} alt="Logo de Linguo Traductor" className="h-100 md:h-20" />
+                        <img src={logo} alt="Logo de Linguo Traductor" className="h-16 md:h-24" />
                     </div>
                     {/* **FIN: Sección de Logo ** */}
-
+                    
                     {/* El resto del contenido principal se mantiene. Un margen superior para no chocar con el logo. */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-20 md:mt-24"> {/* Ajusta el mt-valor si el logo se superpone */}
                         <div>
