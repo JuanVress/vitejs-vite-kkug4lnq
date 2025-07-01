@@ -309,7 +309,7 @@ const App = () => {
                     <ins className="adsbygoogle"
                          style={{ display: 'block', width: '100%', height: 'auto', minHeight: '90px' }} 
                          data-ad-client="pub-3121401058916322" // ¡ID de Editor YA REEMPLAZADO!
-                         data-ad-slot="TU_ID_DE_SLOT"       // <-- ¡DEBES REEMPLAZAR ESTO CON TU ID DE SLOT REAL!
+                         data-ad-slot="4072799267"       // <-- ¡DEBES REEMPLAZAR ESTO CON TU ID DE SLOT REAL!
                          data-ad-format="auto"
                          data-full-width-responsive="true"></ins>
                 </div>
