@@ -354,7 +354,7 @@ const App = () => {
             </main>
 
             {/* --- BLOQUE DE PUBLICIDAD LATERAL MODIFICADO --- */}
-            <div className="ad-container-right absolute top-[24rem] md:top-[26rem] right-2 md:right-4 w-28 h-96 md:w-48 md:h-[40rem] bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
+            <div className="ad-container-right absolute top-[12rem] md:top-[14rem] right-2 md:right-4 w-28 h-96 md:w-48 md:h-[40rem] bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
                  <ins className="adsbygoogle"
                       style={{ display: 'block', width: '100%', height: '100%' }}
                       data-ad-client="pub-3121401058916322"
