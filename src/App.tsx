@@ -74,7 +74,7 @@ const App = () => {
         { code: 'ar', name: 'Árabe' }, { code: 'ru', name: 'Ruso' },
     ];
 
-    // Función para obtener la fecha de hoy en formato YYYY-MM-DD
+    // Función para obtener la fecha de hoy en formato ISO (AAAA-MM-DD)
     const getTodayDate = () => {
         const today = new Date();
         const year = today.getFullYear();
@@ -153,22 +153,28 @@ const App = () => {
     }, [db, userId, isAuthReady]);
 
     useEffect(() => {
-        const loadGoogleAds = () => {
+        // Esta función se encarga de empujar los anuncios a AdSense
+        const pushAds = () => {
             if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
                 try {
-                    (window.adsbygoogle as any[]).push({});
+                    // Empuja una solicitud para cada unidad de anuncio definida en el DOM
+                    // Esto es necesario para cada <ins class="adsbygoogle">
+                    (window.adsbygoogle as any[]).push({}); 
                     console.log("AdSense push triggered successfully.");
                 } catch (e) {
                     console.error("Error al ejecutar adsbygoogle.push:", e);
                 }
             } else {
                 console.warn("window.adsbygoogle no está disponible. Reintentando en 500ms...");
-                setTimeout(loadGoogleAds, 500);
+                setTimeout(pushAds, 500); // Reintenta si AdSense no se ha cargado aún
             }
         };
 
-        loadGoogleAds();
-    }, []);
+        // Llama a pushAds cuando el componente se monta
+        // Podrías llamar esto de nuevo si añades o eliminas dinámicamente unidades de anuncio
+        // en el DOM después del montaje inicial.
+        pushAds(); 
+    }, []); // Dependencia vacía para que se ejecute solo una vez al montar
 
     // --- FUNCIONES ---
     const handleTranslate = async () => {
@@ -190,7 +196,7 @@ const App = () => {
 
         try {
             const apiKey = "AIzaSyC4mPun5tdNyxhh8Be3vcLi0SgRc4c3oJE";
-            // *** CAMBIO AQUÍ: Usando Gemini 2.5 Pro ***
+            // *** Usando Gemini 2.5 Pro ***
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`; 
             const sourceLangName = languages.find(l => l.code === sourceLanguage)?.name;
             const targetLangName = languages.find(l => l.code === targetLanguage)?.name;
@@ -229,9 +235,6 @@ const App = () => {
             const errorMessage = err instanceof Error ? err.message : String(err);
             console.error('Error al traducir:', err);
             setError(`Error de traducción: ${errorMessage}`);
-            // Si hay un error en la API, no se cuenta para el límite gratuito,
-            // a menos que el error sea por exceso de cuota de Google, en cuyo caso
-            // la lógica del límite personalizado ya lo habría detectado.
         } finally {
             setIsLoading(false);
         }
@@ -267,7 +270,6 @@ const App = () => {
         if (!db || !userId) return;
         try {
             await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/translationHistory`, itemId));
-            // No se decrementa el contador diario, ya que la traducción ya se realizó y consumió el cupo.
         } catch (err) { setError("Error al eliminar la traducción."); }
     };
 
@@ -373,8 +375,7 @@ const App = () => {
                     )}
                 </div>
 
-                {/* **INICIO: Sección para la Publicidad ** */}
-                {/* Aseguramos que el max-w sea full en móvil y 5xl en desktop */}
+                {/* **INICIO: Sección para la Publicidad (Cuadro Inferior Principal) ** */}
                 <div className="ad-container mt-8 p-4 bg-[#fff4e3] rounded-xl shadow-md w-full max-w-full md:max-w-5xl mx-auto text-center min-h-[18rem]">
                     <ins className="adsbygoogle"
                          style={{ display: 'block', width: '100%', height: 'auto', minHeight: '90px' }}
@@ -383,7 +384,20 @@ const App = () => {
                          data-ad-format="auto"
                          data-full-width-responsive="true"></ins>
                 </div>
-                {/* **FIN: Sección para la Publicidad ** */}
+                {/* **FIN: Sección para la Publicidad (Cuadro Inferior Principal) ** */}
+
+                {/* **INICIO: Sección para la Publicidad (Cuadro Lateral Derecho) ** */}
+                {/* Posicionamiento absoluto para que quede al lado derecho del contenido principal */}
+                {/* Asegúrate de que este 'div' no se superponga con el logo en tamaños más pequeños */}
+                <div className="ad-container-right absolute top-24 md:top-32 right-4 md:right-8 w-28 h-64 md:w-48 md:h-96 bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
+                     <ins className="adsbygoogle"
+                          style={{ display: 'block', width: '100%', height: '100%' }}
+                          data-ad-client="pub-3121401058916322"
+                          data-ad-slot="8783018707"  {/* <--- ¡ACTUALIZADO CON TU NUEVO AD_SLOT! */}
+                          data-ad-format="auto"
+                          data-full-width-responsive="true"></ins>
+                </div>
+                {/* **FIN: Sección para la Publicidad (Cuadro Lateral Derecho) ** */}
 
             </main>
         </div>
