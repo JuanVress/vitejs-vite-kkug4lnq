@@ -289,7 +289,8 @@ const App = () => {
             </aside>
 
             <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48 relative">
-                <div className="absolute top-4 right-4 z-50 md:top-8 md:right-8">
+                {/* --- LOGO CON POSICIÓN AJUSTADA --- */}
+                <div className="absolute top-2 right-4 z-50 md:top-6 md:right-8">
                     <img src={logo} alt="Logo de Linguo Traductor" className="h-12 md:h-48" />
                 </div>
                 
@@ -354,7 +355,7 @@ const App = () => {
             </main>
 
             {/* --- BLOQUE DE PUBLICIDAD LATERAL MODIFICADO --- */}
-            <div className="ad-container-right absolute top-[12rem] md:top-[14rem] right-2 md:right-4 w-28 h-96 md:w-48 md:h-[40rem] bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
+            <div className="ad-container-right absolute top-[10rem] md:top-[12rem] right-2 md:right-4 w-28 h-96 md:w-48 md:h-[40rem] bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
                  <ins className="adsbygoogle"
                       style={{ display: 'block', width: '100%', height: '100%' }}
                       data-ad-client="pub-3121401058916322"
