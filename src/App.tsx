@@ -283,7 +283,8 @@ const App = () => {
 
     // --- RENDERIZADO DE LA INTERFAZ ---
     return (
-        <div className="min-h-screen flex flex-col md:flex-row bg-[#e6d5c1] font-sans text-[#785d56]">
+        // Contenedor principal: relative para que los hijos con absolute se posicionen en relación a él
+        <div className="min-h-screen flex flex-col md:flex-row bg-[#e6d5c1] font-sans text-[#785d56] relative">
             <style>{`@font-face{font-family:'Fragmentcore';src:url('/fonts/Fragmentcore.otf') format('opentype');} body{font-family:'Fragmentcore',sans-serif;} .custom-scrollbar::-webkit-scrollbar{width:8px;} .custom-scrollbar::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px;} .custom-scrollbar::-webkit-scrollbar-thumb{background:#c6b299;border-radius:10px;} .custom-scrollbar::-webkit-scrollbar-thumb:hover{background:#be4c54;}`}</style>
 
             <aside className="w-full md:w-1/4 bg-[#fff4e3] p-4 md:p-6 shadow-lg flex flex-col rounded-b-2xl md:rounded-r-2xl md:rounded-bl-none overflow-hidden">
@@ -311,18 +312,16 @@ const App = () => {
                 {/* FIN: Nueva imagen en el historial */}
             </aside>
 
-            {/* MODIFICADO: Ajustes en el main para el layout. Eliminamos el pr-48 aquí para móvil */}
-            <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48 relative"> {/* Añadimos 'relative' al main */}
+            <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48 relative"> {/* main es relativo para contener el logo */}
                 {/* **INICIO: Sección de Logo ** */}
-                {/* MODIFICADO: Posicionamiento para móvil y desktop. */}
+                {/* Posicionamiento para que esté por encima del contenido principal */}
                 <div className="absolute top-4 right-4 z-50 md:top-8 md:right-8"> {/* Ajusta top/right para móvil */}
                     <img src={logo} alt="Logo de Linguo Traductor" className="h-12 md:h-48" /> {/* Ajusta tamaño para móvil y desktop */}
                 </div>
                 {/* **FIN: Sección de Logo ** */}
 
                 {/* Contenedor principal para todo el contenido de la sección principal (traductor) */}
-                {/* MODIFICADO: Añadimos un padding top para móvil para que el logo no se superponga */}
-                {/* Ajustamos max-w-full para móvil y max-w-5xl para desktop */}
+                {/* Ajustado mt-24 para móvil para dar espacio al logo. md:mx-auto para centrar en desktop */}
                 <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-full md:max-w-5xl mt-24 md:mt-24 space-y-4 md:mx-auto"> {/* Ajustado mt-24 para móvil */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -386,21 +385,24 @@ const App = () => {
                 </div>
                 {/* **FIN: Sección para la Publicidad (Cuadro Inferior Principal) ** */}
 
-                {/* **INICIO: Sección para la Publicidad (Cuadro Lateral Derecho) ** */}
-                {/* Posicionamiento absoluto para que quede al lado derecho del contenido principal */}
-                {/* Asegúrate de que este 'div' no se superponga con el logo en tamaños más pequeños */}
-                <div className="ad-container-right absolute top-24 md:top-32 right-4 md:right-8 w-28 h-64 md:w-48 md:h-96 bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
-                     <ins className="adsbygoogle"
-                          style={{ display: 'block', width: '100%', height: '100%' }}
-                          data-ad-client="pub-3121401058916322"
-                          data-ad-slot="8783018707" // ¡Comentario eliminado para corregir el error TS1005!
-                          data-ad-format="auto"
-                          data-full-width-responsive="true"></ins>
-                </div>
-                {/* **FIN: Sección para la Publicidad (Cuadro Lateral Derecho) ** */}
-
             </main>
-        </div>
+
+            {/* **INICIO: Sección para la Publicidad (Cuadro Lateral Derecho - Fuera de 'main') ** */}
+            {/* Este div está fuera del 'main' para permitir un posicionamiento absoluto más flexible */}
+            {/* Las coordenadas 'top' y 'right' están ahora relativas al contenedor principal de la aplicación */}
+            {/* Ajustado 'top' a md:top-[25rem] o un valor similar para que quede por debajo del logo y los recuadros centrales */}
+            {/* Puedes ajustar 'top' y 'right' aún más si la posición no es la deseada */}
+            <div className="ad-container-right absolute top-[20rem] md:top-[25rem] right-4 md:right-8 w-28 h-64 md:w-48 md:h-96 bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
+                 <ins className="adsbygoogle"
+                      style={{ display: 'block', width: '100%', height: '100%' }}
+                      data-ad-client="pub-3121401058916322"
+                      data-ad-slot="8783018707" 
+                      data-ad-format="auto"
+                      data-full-width-responsive="true"></ins>
+            </div>
+            {/* **FIN: Sección para la Publicidad (Cuadro Lateral Derecho) ** */}
+
+        </div> {/* Cierre del div principal */}
     );
 };
 
