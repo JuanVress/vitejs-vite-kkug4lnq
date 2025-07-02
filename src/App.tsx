@@ -393,7 +393,7 @@ const App = () => {
                      <ins className="adsbygoogle"
                           style={{ display: 'block', width: '100%', height: '100%' }}
                           data-ad-client="pub-3121401058916322"
-                          data-ad-slot="8783018707"  {/* <--- ¡ACTUALIZADO CON TU NUEVO AD_SLOT! */}
+                          data-ad-slot="8783018707"  {/* <--- ¡CORREGIDO! */}
                           data-ad-format="auto"
                           data-full-width-responsive="true"></ins>
                 </div>
