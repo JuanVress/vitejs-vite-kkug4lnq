@@ -41,6 +41,9 @@ const firebaseConfig = {
 
 const appId = "linguo-app-produccion";
 
+// --- LÍMITE DE TRADUCCIONES GRATUITAS POR USUARIO ---
+const MAX_FREE_TRANSLATIONS = 10; 
+
 // --- COMPONENTE PRINCIPAL ---
 const App = () => {
     // --- ESTADOS CON TIPOS EXPLÍCITOS ---
@@ -58,6 +61,7 @@ const App = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
     const [translationHistory, setTranslationHistory] = useState<HistoryItem[]>([]);
+    const [translationCount, setTranslationCount] = useState<number>(0); 
 
     const languages = [
         { code: 'en', name: 'Inglés' }, { code: 'es', name: 'Español' }, { code: 'fr', name: 'Francés' },
@@ -66,7 +70,14 @@ const App = () => {
         { code: 'ar', name: 'Árabe' }, { code: 'ru', name: 'Ruso' },
     ];
 
-    // --- EFECTOS (LÓGICA DE INICIALIZACIÓN) ---
+    const getTodayDate = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     useEffect(() => {
         try {
             const app: FirebaseApp = initializeApp(firebaseConfig);
@@ -75,6 +86,10 @@ const App = () => {
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     setUserId(user.uid);
+                    const today = getTodayDate();
+                    const savedCountKey = `translationCount_${user.uid}_${today}`;
+                    const savedCount = localStorage.getItem(savedCountKey);
+                    setTranslationCount(savedCount ? parseInt(savedCount, 10) : 0);
                 } else {
                     await signInAnonymously(auth).catch(console.error);
                 }
@@ -131,33 +146,40 @@ const App = () => {
     }, [db, userId, isAuthReady]);
 
     useEffect(() => {
-        const loadGoogleAds = () => {
+        const pushAds = () => {
             if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
                 try {
-                    (window.adsbygoogle as any[]).push({});
+                    (window.adsbygoogle as any[]).push({}); 
                     console.log("AdSense push triggered successfully.");
                 } catch (e) {
                     console.error("Error al ejecutar adsbygoogle.push:", e);
                 }
             } else {
                 console.warn("window.adsbygoogle no está disponible. Reintentando en 500ms...");
-                setTimeout(loadGoogleAds, 500);
+                setTimeout(pushAds, 500);
             }
         };
-
-        loadGoogleAds();
+        pushAds(); 
     }, []);
 
-    // --- FUNCIONES ---
     const handleTranslate = async () => {
-        if (!inputText.trim()) return setError('Por favor, ingresa texto para traducir.');
+        if (!inputText.trim()) {
+            setError('Por favor, ingresa texto para traducir.');
+            return;
+        }
+
+        if (translationCount >= MAX_FREE_TRANSLATIONS) {
+            setError(`Has alcanzado el límite diario de ${MAX_FREE_TRANSLATIONS} traducciones gratuitas. Si deseas continuar traduciendo hoy, por favor, considera una actualización de pago.`);
+            return;
+        }
+
         setIsLoading(true);
         setError('');
         setTranslatedText('');
 
         try {
             const apiKey = "AIzaSyC4mPun5tdNyxhh8Be3vcLi0SgRc4c3oJE";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`; 
             const sourceLangName = languages.find(l => l.code === sourceLanguage)?.name;
             const targetLangName = languages.find(l => l.code === targetLanguage)?.name;
             const prompt = `Traduce de ${sourceLangName} a ${targetLangName}. Responde únicamente con la traducción directa, sin añadir ninguna palabra, explicación o contexto adicional. Texto a traducir: "${inputText}"`;
@@ -180,11 +202,16 @@ const App = () => {
                         originalText: inputText, translatedText: text, sourceLang: sourceLanguage,
                         targetLang: targetLanguage, timestamp: serverTimestamp(),
                     });
+                    const today = getTodayDate();
+                    const savedCountKey = `translationCount_${userId}_${today}`;
+                    const newCount = translationCount + 1;
+                    setTranslationCount(newCount);
+                    localStorage.setItem(savedCountKey, newCount.toString());
                 }
             } else {
                  throw new Error('No se pudo obtener una traducción de la respuesta de la API.');
             }
-        } catch (err: unknown) {
+        } catch (err: unknown) { 
             const errorMessage = err instanceof Error ? err.message : String(err);
             console.error('Error al traducir:', err);
             setError(`Error de traducción: ${errorMessage}`);
@@ -201,7 +228,7 @@ const App = () => {
         const utterance = new SpeechSynthesisUtterance(translatedText);
         utterance.lang = targetLanguage;
         const foundVoice = voices.find(v => v.lang.startsWith(targetLanguage));
-        utterance.voice = foundVoice || null;
+        utterance.voice = foundVoice || null; 
         utterance.onend = () => setIsSpeaking(false);
         utterance.onerror = () => {
             setError('Error al reproducir el audio.');
@@ -234,9 +261,8 @@ const App = () => {
         setError('');
     };
 
-    // --- RENDERIZADO DE LA INTERFAZ ---
     return (
-        <div className="min-h-screen flex flex-col md:flex-row bg-[#e6d5c1] font-sans text-[#785d56]">
+        <div className="min-h-screen flex flex-col md:flex-row bg-[#e6d5c1] font-sans text-[#785d56] relative">
             <style>{`@font-face{font-family:'Fragmentcore';src:url('/fonts/Fragmentcore.otf') format('opentype');} body{font-family:'Fragmentcore',sans-serif;} .custom-scrollbar::-webkit-scrollbar{width:8px;} .custom-scrollbar::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px;} .custom-scrollbar::-webkit-scrollbar-thumb{background:#c6b299;border-radius:10px;} .custom-scrollbar::-webkit-scrollbar-thumb:hover{background:#be4c54;}`}</style>
 
             <aside className="w-full md:w-1/4 bg-[#fff4e3] p-4 md:p-6 shadow-lg flex flex-col rounded-b-2xl md:rounded-r-2xl md:rounded-bl-none overflow-hidden">
@@ -257,26 +283,18 @@ const App = () => {
                         </ul>
                     ) : ( <p className="text-gray-500 text-center mt-4">No hay historial.</p> )}
                 </div>
-                {/* INICIO: Nueva imagen en la parte inferior central del historial */}
                 <div className="mt-auto pt-4 text-center">
                     <img src={historyImage} alt="Imagen de Historial" className="h-32 mx-auto" />
                 </div>
-                {/* FIN: Nueva imagen en el historial */}
             </aside>
 
-            {/* MODIFICADO: Ajustes en el main para el layout. Eliminamos el pr-48 aquí para móvil */}
-            <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48 relative"> {/* Añadimos 'relative' al main */}
-                {/* **INICIO: Sección de Logo ** */}
-                {/* MODIFICADO: Posicionamiento para móvil y desktop. */}
-                <div className="absolute top-4 right-4 z-50 md:top-8 md:right-8"> {/* Ajusta top/right para móvil */}
-                    <img src={logo} alt="Logo de Linguo Traductor" className="h-20 md:h-64" /> {/* Ajusta tamaño para móvil */}
+            <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48 relative">
+                {/* --- LOGO CON POSICIÓN CENTRADA HORIZONTALMENTE --- */}
+                <div className="absolute top-1 right-10 z-50 md:top-2 md:right-4">
+                    <img src={logo} alt="Logo de Linguo Traductor" className="h-12 md:h-48" />
                 </div>
-                {/* **FIN: Sección de Logo ** */}
-
-                {/* Contenedor principal para todo el contenido de la sección principal (traductor) */}
-                {/* MODIFICADO: Añadimos un padding top para móvil para que el logo no se superponga */}
-                {/* Ajustamos max-w-full para móvil y max-w-5xl para desktop */}
-                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-full md:max-w-5xl mt-24 md:mt-24 space-y-4 md:mx-auto"> {/* Ajustado mt-24 para móvil */}
+                
+                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-full md:max-w-5xl mt-24 md:mt-24 space-y-4 md:mx-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="source-lang" className="text-lg font-semibold text-[#785d56]">Idioma de Origen:</label>
@@ -305,14 +323,27 @@ const App = () => {
                             </div>
                         </div>
                     </div>
-                    <button onClick={handleTranslate} disabled={isLoading || !inputText.trim() || !isAuthReady} className={`w-full py-2 px-4 rounded-xl text-white font-bold text-lg shadow-md transition-all ${isLoading || !inputText.trim() || !isAuthReady ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#be4c54] hover:bg-[#a83b42] transform hover:scale-105 active:scale-95'} mt-4`}>
+                    <button onClick={handleTranslate} disabled={isLoading || !inputText.trim() || !isAuthReady || translationCount >= MAX_FREE_TRANSLATIONS} className={`w-full py-2 px-4 rounded-xl text-white font-bold text-lg shadow-md transition-all ${isLoading || !inputText.trim() || !isAuthReady || translationCount >= MAX_FREE_TRANSLATIONS ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#be4c54] hover:bg-[#a83b42] transform hover:scale-105 active:scale-95'} mt-4`}>
                         {isLoading ? (<div className="flex items-center justify-center"><svg className="animate-spin h-4 w-4 mr-2 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Traduciendo...</div>) : ('Traducir')}
                     </button>
                     {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mt-4 text-sm" role="alert"><strong className="font-bold">¡Error!</strong><span className="block sm:inline"> {error}</span></div>)}
-                </div>
 
-                {/* **INICIO: Sección para la Publicidad ** */}
-                {/* Aseguramos que el max-w sea full en móvil y 5xl en desktop */}
+                    <p className="text-center text-xs text-[#785d56]/80 mt-3">
+                        ⚡ Utilizando Gemini 2.5 Pro: Puede demorar un poco más, pero ofrece una traducción más potente y capaz.
+                    </p>
+
+                    {userId && translationCount < MAX_FREE_TRANSLATIONS && (
+                        <p className="text-center text-sm text-[#785d56] mt-3">
+                            Traducciones gratuitas restantes hoy: {MAX_FREE_TRANSLATIONS - translationCount} de {MAX_FREE_TRANSLATIONS}.
+                        </p>
+                    )}
+                    {userId && translationCount >= MAX_FREE_TRANSLATIONS && (
+                        <p className="text-center text-sm text-red-600 mt-3 font-semibold">
+                            Has usado todas tus traducciones gratuitas de hoy. ¡Gracias por usar Linguo! Por favor, considera actualizar tu plan para traducciones ilimitadas.
+                        </p>
+                    )}
+                </div>
+                
                 <div className="ad-container mt-8 p-4 bg-[#fff4e3] rounded-xl shadow-md w-full max-w-full md:max-w-5xl mx-auto text-center min-h-[18rem]">
                     <ins className="adsbygoogle"
                          style={{ display: 'block', width: '100%', height: 'auto', minHeight: '90px' }}
@@ -321,9 +352,17 @@ const App = () => {
                          data-ad-format="auto"
                          data-full-width-responsive="true"></ins>
                 </div>
-                {/* **FIN: Sección para la Publicidad ** */}
-
             </main>
+
+            {/* --- BLOQUE DE PUBLICIDAD LATERAL (POSICIÓN SIN CAMBIOS) --- */}
+            <div className="ad-container-right absolute top-[10rem] md:top-[12rem] right-2 md:right-4 w-28 h-96 md:w-48 md:h-[40rem] bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
+                 <ins className="adsbygoogle"
+                      style={{ display: 'block', width: '100%', height: '100%' }}
+                      data-ad-client="pub-3121401058916322"
+                      data-ad-slot="8783018707" 
+                      data-ad-format="auto"
+                      data-full-width-responsive="true"></ins>
+            </div>
         </div>
     );
 };
