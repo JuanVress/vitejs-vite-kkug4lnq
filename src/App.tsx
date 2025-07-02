@@ -313,7 +313,8 @@ const App = () => {
                 {/* FIN: Nueva imagen en el historial */}
             </aside>
 
-            <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48 relative"> {/* main es relativo para contener el logo y el contenido principal */}
+            {/* main es relativo para contener el logo y el contenido principal */}
+            <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48 relative">
                 {/* **INICIO: Sección de Logo ** */}
                 {/* Posicionamiento para que esté por encima del contenido principal */}
                 <div className="absolute top-4 right-4 z-50 md:top-8 md:right-8"> {/* Ajusta top/right para móvil */}
@@ -389,11 +390,10 @@ const App = () => {
             </main>
 
             {/* **INICIO: Sección para la Publicidad (Cuadro Lateral Derecho - Fuera de 'main') ** */}
-            {/* Este div está ahora al mismo nivel que <aside> y <main> para un posicionamiento más flexible relativo al contenedor principal */}
-            {/* Ajustado 'top' a md:top-[25rem] (400px) para que quede por debajo del logo y separado de los recuadros centrales */}
-            {/* Puedes ajustar 'top' y 'right' aún más si la posición no es la deseada */}
-            {/* Nota: el min-h-screen del div padre es crucial para que el posicionamiento absoluto funcione correctamente */}
-            <div className="ad-container-right absolute top-[20rem] md:top-[25rem] right-4 md:right-8 w-28 h-64 md:w-48 md:h-96 bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
+            {/* Este div está al mismo nivel que <aside> y <main> para un posicionamiento más flexible relativo al contenedor principal */}
+            {/* Ajustado 'top' para que quede por debajo del logo y separado de los recuadros centrales */}
+            {/* El 'top' es crucial para controlar la distancia desde la parte superior de la pantalla */}
+            <div className="ad-container-right absolute top-[25rem] md:top-[28rem] right-4 md:right-8 w-28 h-64 md:w-48 md:h-96 bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
                  <ins className="adsbygoogle"
                       style={{ display: 'block', width: '100%', height: '100%' }}
                       data-ad-client="pub-3121401058916322"
