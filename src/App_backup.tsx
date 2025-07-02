@@ -243,7 +243,7 @@ const App = () => {
     const handleSpeak = () => {
         if (!translatedText || !window.speechSynthesis) return;
         if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
-
+        
         setIsSpeaking(true);
         const utterance = new SpeechSynthesisUtterance(translatedText);
         utterance.lang = targetLanguage;
@@ -256,7 +256,7 @@ const App = () => {
         };
         window.speechSynthesis.speak(utterance);
     };
-
+    
     const handleSpeechInput = () => {
         if (!recognition.current) return setError('El reconocimiento de voz no está disponible.');
         if (isListening) {
@@ -357,7 +357,7 @@ const App = () => {
                         {isLoading ? (<div className="flex items-center justify-center"><svg className="animate-spin h-4 w-4 mr-2 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Traduciendo...</div>) : ('Traducir')}
                     </button>
                     {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mt-4 text-sm" role="alert"><strong className="font-bold">¡Error!</strong><span className="block sm:inline"> {error}</span></div>)}
-
+                    
                     {/* Advertencia sobre la IA Pro y el tiempo de respuesta */}
                     <p className="text-center text-xs text-[#785d56]/80 mt-3">
                         ⚡ Utilizando Gemini 2.5 Pro: Puede demorar un poco más, pero ofrece una traducción más potente y capaz.
@@ -390,10 +390,9 @@ const App = () => {
             </main>
 
             {/* **INICIO: Sección para la Publicidad (Cuadro Lateral Derecho - Fuera de 'main') ** */}
-            {/* Este div está ahora al mismo nivel que <aside> y <main> para un posicionamiento más flexible relativo al contenedor principal */}
+            {/* Este div está al mismo nivel que <aside> y <main> para un posicionamiento más flexible relativo al contenedor principal */}
             {/* Ajustado 'top' para que quede por debajo del logo y separado de los recuadros centrales */}
             {/* El 'top' es crucial para controlar la distancia desde la parte superior de la pantalla */}
-            {/* Nota: el min-h-screen del div padre es crucial para que el posicionamiento absoluto funcione correctamente */}
             <div className="ad-container-right absolute top-[25rem] md:top-[28rem] right-4 md:right-8 w-28 h-64 md:w-48 md:h-96 bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
                  <ins className="adsbygoogle"
                       style={{ display: 'block', width: '100%', height: '100%' }}
