@@ -289,8 +289,8 @@ const App = () => {
             </aside>
 
             <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48 relative">
-                {/* --- LOGO CON POSICIÓN AJUSTADA --- */}
-                <div className="absolute top-1 right-4 z-50 md:top-2 md:right-8">
+                {/* --- LOGO CON POSICIÓN CENTRADA HORIZONTALMENTE --- */}
+                <div className="absolute top-1 right-10 z-50 md:top-2 md:right-4">
                     <img src={logo} alt="Logo de Linguo Traductor" className="h-12 md:h-48" />
                 </div>
                 
