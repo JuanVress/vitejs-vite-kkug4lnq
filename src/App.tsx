@@ -74,6 +74,15 @@ const App = () => {
         { code: 'ar', name: 'Árabe' }, { code: 'ru', name: 'Ruso' },
     ];
 
+    // Función para obtener la fecha de hoy en formato YYYY-MM-DD
+    const getTodayDate = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Meses de 0-11
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     // --- EFECTOS (LÓGICA DE INICIALIZACIÓN) ---
     useEffect(() => {
         try {
@@ -84,8 +93,9 @@ const App = () => {
                 if (user) {
                     setUserId(user.uid);
                     // Cargar el conteo de traducciones del localStorage al iniciar sesión (o anónimamente)
-                    // Utiliza el userId para hacer el conteo específico por usuario (incluso anónimo)
-                    const savedCount = localStorage.getItem(`translationCount_${user.uid}`);
+                    const today = getTodayDate();
+                    const savedCountKey = `translationCount_${user.uid}_${today}`;
+                    const savedCount = localStorage.getItem(savedCountKey);
                     setTranslationCount(savedCount ? parseInt(savedCount, 10) : 0);
                 } else {
                     await signInAnonymously(auth).catch(console.error);
@@ -167,11 +177,9 @@ const App = () => {
             return;
         }
 
-        // --- LÓGICA DEL LÍMITE DE TRADUCCIONES ---
-        // Se deshabilita el botón con 'disabled={... || translationCount >= MAX_FREE_TRANSLATIONS}'
-        // y se muestra el error directamente aquí antes de hacer la llamada a la API.
+        // --- LÓGICA DEL LÍMITE DE TRADUCCIONES DIARIAS ---
         if (translationCount >= MAX_FREE_TRANSLATIONS) {
-            setError(`Has alcanzado el límite de ${MAX_FREE_TRANSLATIONS} traducciones gratuitas. Por favor, considera registrarte o actualizar tu plan para traducciones ilimitadas.`);
+            setError(`Has alcanzado el límite diario de ${MAX_FREE_TRANSLATIONS} traducciones gratuitas. Si deseas continuar traduciendo hoy, por favor, considera una actualización de pago.`);
             return; // Detiene la ejecución si el límite se ha excedido
         }
         // --- FIN LÓGICA DEL LÍMITE DE TRADUCCIONES ---
@@ -208,9 +216,11 @@ const App = () => {
                     });
                     // Incrementar el conteo de traducciones y guardarlo en localStorage
                     // Solo incrementa si la traducción fue exitosa y se guardó en el historial
+                    const today = getTodayDate();
+                    const savedCountKey = `translationCount_${userId}_${today}`;
                     const newCount = translationCount + 1;
                     setTranslationCount(newCount);
-                    localStorage.setItem(`translationCount_${userId}`, newCount.toString());
+                    localStorage.setItem(savedCountKey, newCount.toString());
                 }
             } else {
                  throw new Error('No se pudo obtener una traducción de la respuesta de la API.');
@@ -219,7 +229,9 @@ const App = () => {
             const errorMessage = err instanceof Error ? err.message : String(err);
             console.error('Error al traducir:', err);
             setError(`Error de traducción: ${errorMessage}`);
-            // Si hay un error en la API, no se cuenta para el límite gratuito
+            // Si hay un error en la API, no se cuenta para el límite gratuito,
+            // a menos que el error sea por exceso de cuota de Google, en cuyo caso
+            // la lógica del límite personalizado ya lo habría detectado.
         } finally {
             setIsLoading(false);
         }
@@ -255,12 +267,7 @@ const App = () => {
         if (!db || !userId) return;
         try {
             await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/translationHistory`, itemId));
-            // Opcional: Si eliminas una traducción del historial, podrías querer "devolver" una traducción al contador.
-            // Para fines de este límite "gratuito", lo más común es que no se devuelva.
-            // Si quisieras, descomenta las siguientes líneas:
-            // const newCount = Math.max(0, translationCount - 1);
-            // setTranslationCount(newCount);
-            // localStorage.setItem(`translationCount_${userId}`, newCount.toString());
+            // No se decrementa el contador diario, ya que la traducción ya se realizó y consumió el cupo.
         } catch (err) { setError("Error al eliminar la traducción."); }
     };
 
@@ -347,15 +354,21 @@ const App = () => {
                         {isLoading ? (<div className="flex items-center justify-center"><svg className="animate-spin h-4 w-4 mr-2 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Traduciendo...</div>) : ('Traducir')}
                     </button>
                     {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mt-4 text-sm" role="alert"><strong className="font-bold">¡Error!</strong><span className="block sm:inline"> {error}</span></div>)}
+                    
+                    {/* Advertencia sobre la IA Pro y el tiempo de respuesta */}
+                    <p className="text-center text-xs text-[#785d56]/80 mt-3">
+                        ⚡ Utilizando Gemini 2.5 Pro: Puede demorar un poco más, pero ofrece una traducción más potente y capaz.
+                    </p>
+
                     {/* Indicador de traducciones restantes/usadas */}
                     {userId && translationCount < MAX_FREE_TRANSLATIONS && (
                         <p className="text-center text-sm text-[#785d56] mt-3">
-                            Traducciones gratuitas restantes: {MAX_FREE_TRANSLATIONS - translationCount} de {MAX_FREE_TRANSLATIONS}
+                            Traducciones gratuitas restantes hoy: {MAX_FREE_TRANSLATIONS - translationCount} de {MAX_FREE_TRANSLATIONS}.
                         </p>
                     )}
                     {userId && translationCount >= MAX_FREE_TRANSLATIONS && (
                         <p className="text-center text-sm text-red-600 mt-3 font-semibold">
-                            Has usado todas tus traducciones gratuitas. ¡Gracias por usar Linguo! Por favor, actualiza tu plan para traducciones ilimitadas.
+                            Has usado todas tus traducciones gratuitas de hoy. ¡Gracias por usar Linguo! Por favor, considera actualizar tu plan para traducciones ilimitadas.
                         </p>
                     )}
                 </div>
