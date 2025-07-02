@@ -4,7 +4,7 @@ import type { FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import type { Auth } from 'firebase/auth';
 import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp, deleteDoc, orderBy } from 'firebase/firestore';
-import type { Firestore } from 'firebase/firestore';
+import type { Firestore } from 'firestore';
 
 // --- Importaciones de imágenes ---
 import logo from '/assets/logo.png';
@@ -42,9 +42,6 @@ const firebaseConfig = {
 const appId = "linguo-app-produccion";
 
 // --- LÍMITE DE TRADUCCIONES GRATUITAS POR USUARIO ---
-// NOTA IMPORTANTE: Para una solución de producción segura y a prueba de manipulaciones,
-// este conteo debería gestionarse en un backend (ej. Firebase Cloud Functions, Firestore Security Rules)
-// y no solo en el cliente (localStorage), ya que es fácilmente manipulable por el usuario.
 const MAX_FREE_TRANSLATIONS = 10; 
 
 // --- COMPONENTE PRINCIPAL ---
@@ -64,7 +61,6 @@ const App = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
     const [translationHistory, setTranslationHistory] = useState<HistoryItem[]>([]);
-    // Nuevo estado para el conteo de traducciones
     const [translationCount, setTranslationCount] = useState<number>(0); 
 
     const languages = [
@@ -74,16 +70,14 @@ const App = () => {
         { code: 'ar', name: 'Árabe' }, { code: 'ru', name: 'Ruso' },
     ];
 
-    // Función para obtener la fecha de hoy en formato ISO (AAAA-MM-DD)
     const getTodayDate = () => {
         const today = new Date();
         const year = today.getFullYear();
-        const month = String(today.getMonth() + 1).padStart(2, '0'); // Meses de 0-11
+        const month = String(today.getMonth() + 1).padStart(2, '0');
         const day = String(today.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
     };
 
-    // --- EFECTOS (LÓGICA DE INICIALIZACIÓN) ---
     useEffect(() => {
         try {
             const app: FirebaseApp = initializeApp(firebaseConfig);
@@ -92,7 +86,6 @@ const App = () => {
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     setUserId(user.uid);
-                    // Cargar el conteo de traducciones del localStorage al iniciar sesión (o anónimamente)
                     const today = getTodayDate();
                     const savedCountKey = `translationCount_${user.uid}_${today}`;
                     const savedCount = localStorage.getItem(savedCountKey);
@@ -153,12 +146,9 @@ const App = () => {
     }, [db, userId, isAuthReady]);
 
     useEffect(() => {
-        // Esta función se encarga de empujar los anuncios a AdSense
         const pushAds = () => {
             if (window.adsbygoogle && typeof window.adsbygoogle.push === 'function') {
                 try {
-                    // Empuja una solicitud para cada unidad de anuncio definida en el DOM
-                    // Esto es necesario para cada <ins class="adsbygoogle">
                     (window.adsbygoogle as any[]).push({}); 
                     console.log("AdSense push triggered successfully.");
                 } catch (e) {
@@ -166,37 +156,29 @@ const App = () => {
                 }
             } else {
                 console.warn("window.adsbygoogle no está disponible. Reintentando en 500ms...");
-                setTimeout(pushAds, 500); // Reintenta si AdSense no se ha cargado aún
+                setTimeout(pushAds, 500);
             }
         };
-
-        // Llama a pushAds cuando el componente se monta
-        // Podrías llamar esto de nuevo si añades o eliminas dinámicamente unidades de anuncio
-        // en el DOM después del montaje inicial.
         pushAds(); 
-    }, []); // Dependencia vacía para que se ejecute solo una vez al montar
+    }, []);
 
-    // --- FUNCIONES ---
     const handleTranslate = async () => {
         if (!inputText.trim()) {
             setError('Por favor, ingresa texto para traducir.');
             return;
         }
 
-        // --- LÓGICA DEL LÍMITE DE TRADUCCIONES DIARIAS ---
         if (translationCount >= MAX_FREE_TRANSLATIONS) {
             setError(`Has alcanzado el límite diario de ${MAX_FREE_TRANSLATIONS} traducciones gratuitas. Si deseas continuar traduciendo hoy, por favor, considera una actualización de pago.`);
-            return; // Detiene la ejecución si el límite se ha excedido
+            return;
         }
-        // --- FIN LÓGICA DEL LÍMITE DE TRADUCCIONES ---
 
         setIsLoading(true);
-        setError(''); // Limpia errores previos al iniciar una nueva traducción
-        setTranslatedText(''); // Limpia la traducción previa
+        setError('');
+        setTranslatedText('');
 
         try {
             const apiKey = "AIzaSyC4mPun5tdNyxhh8Be3vcLi0SgRc4c3oJE";
-            // *** Usando Gemini 2.5 Pro ***
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`; 
             const sourceLangName = languages.find(l => l.code === sourceLanguage)?.name;
             const targetLangName = languages.find(l => l.code === targetLanguage)?.name;
@@ -220,8 +202,6 @@ const App = () => {
                         originalText: inputText, translatedText: text, sourceLang: sourceLanguage,
                         targetLang: targetLanguage, timestamp: serverTimestamp(),
                     });
-                    // Incrementar el conteo de traducciones y guardarlo en localStorage
-                    // Solo incrementa si la traducción fue exitosa y se guardó en el historial
                     const today = getTodayDate();
                     const savedCountKey = `translationCount_${userId}_${today}`;
                     const newCount = translationCount + 1;
@@ -281,10 +261,7 @@ const App = () => {
         setError('');
     };
 
-    // --- RENDERIZADO DE LA INTERFAZ ---
     return (
-        // Contenedor principal: relative para que los hijos con absolute se posicionen en relación a él
-        // y flex para el layout general (aside, main, y el nuevo bloque de publicidad)
         <div className="min-h-screen flex flex-col md:flex-row bg-[#e6d5c1] font-sans text-[#785d56] relative">
             <style>{`@font-face{font-family:'Fragmentcore';src:url('/fonts/Fragmentcore.otf') format('opentype');} body{font-family:'Fragmentcore',sans-serif;} .custom-scrollbar::-webkit-scrollbar{width:8px;} .custom-scrollbar::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px;} .custom-scrollbar::-webkit-scrollbar-thumb{background:#c6b299;border-radius:10px;} .custom-scrollbar::-webkit-scrollbar-thumb:hover{background:#be4c54;}`}</style>
 
@@ -306,25 +283,17 @@ const App = () => {
                         </ul>
                     ) : ( <p className="text-gray-500 text-center mt-4">No hay historial.</p> )}
                 </div>
-                {/* INICIO: Nueva imagen en la parte inferior central del historial */}
                 <div className="mt-auto pt-4 text-center">
                     <img src={historyImage} alt="Imagen de Historial" className="h-32 mx-auto" />
                 </div>
-                {/* FIN: Nueva imagen en el historial */}
             </aside>
 
-            {/* main es relativo para contener el logo y el contenido principal */}
             <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48 relative">
-                {/* **INICIO: Sección de Logo ** */}
-                {/* Posicionamiento para que esté por encima del contenido principal */}
-                <div className="absolute top-4 right-4 z-50 md:top-8 md:right-8"> {/* Ajusta top/right para móvil */}
-                    <img src={logo} alt="Logo de Linguo Traductor" className="h-12 md:h-48" /> {/* Ajusta tamaño para móvil y desktop */}
+                <div className="absolute top-4 right-4 z-50 md:top-8 md:right-8">
+                    <img src={logo} alt="Logo de Linguo Traductor" className="h-12 md:h-48" />
                 </div>
-                {/* **FIN: Sección de Logo ** */}
-
-                {/* Contenedor principal para todo el contenido de la sección principal (traductor) */}
-                {/* Ajustado mt-24 para móvil para dar espacio al logo. md:mx-auto para centrar en desktop */}
-                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-full md:max-w-5xl mt-24 md:mt-24 space-y-4 md:mx-auto"> {/* Ajustado mt-24 para móvil */}
+                
+                <div className="bg-[#fff4e3] p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-full md:max-w-5xl mt-24 md:mt-24 space-y-4 md:mx-auto">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <label htmlFor="source-lang" className="text-lg font-semibold text-[#785d56]">Idioma de Origen:</label>
@@ -358,12 +327,10 @@ const App = () => {
                     </button>
                     {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mt-4 text-sm" role="alert"><strong className="font-bold">¡Error!</strong><span className="block sm:inline"> {error}</span></div>)}
 
-                    {/* Advertencia sobre la IA Pro y el tiempo de respuesta */}
                     <p className="text-center text-xs text-[#785d56]/80 mt-3">
                         ⚡ Utilizando Gemini 2.5 Pro: Puede demorar un poco más, pero ofrece una traducción más potente y capaz.
                     </p>
 
-                    {/* Indicador de traducciones restantes/usadas */}
                     {userId && translationCount < MAX_FREE_TRANSLATIONS && (
                         <p className="text-center text-sm text-[#785d56] mt-3">
                             Traducciones gratuitas restantes hoy: {MAX_FREE_TRANSLATIONS - translationCount} de {MAX_FREE_TRANSLATIONS}.
@@ -375,8 +342,7 @@ const App = () => {
                         </p>
                     )}
                 </div>
-
-                {/* **INICIO: Sección para la Publicidad (Cuadro Inferior Principal) ** */}
+                
                 <div className="ad-container mt-8 p-4 bg-[#fff4e3] rounded-xl shadow-md w-full max-w-full md:max-w-5xl mx-auto text-center min-h-[18rem]">
                     <ins className="adsbygoogle"
                          style={{ display: 'block', width: '100%', height: 'auto', minHeight: '90px' }}
@@ -385,15 +351,8 @@ const App = () => {
                          data-ad-format="auto"
                          data-full-width-responsive="true"></ins>
                 </div>
-                {/* **FIN: Sección para la Publicidad (Cuadro Inferior Principal) ** */}
-
             </main>
 
-            {/* **INICIO: Sección para la Publicidad (Cuadro Lateral Derecho - Fuera de 'main') ** */}
-            {/* Este div está ahora al mismo nivel que <aside> y <main> para un posicionamiento más flexible relativo al contenedor principal */}
-            {/* Ajustado 'top' para que quede por debajo del logo y separado de los recuadros centrales */}
-            {/* El 'top' es crucial para controlar la distancia desde la parte superior de la pantalla */}
-            {/* Nota: el min-h-screen del div padre es crucial para que el posicionamiento absoluto funcione correctamente */}
             <div className="ad-container-right absolute top-[25rem] md:top-[28rem] right-4 md:right-8 w-28 h-64 md:w-48 md:h-96 bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
                  <ins className="adsbygoogle"
                       style={{ display: 'block', width: '100%', height: '100%' }}
@@ -402,9 +361,7 @@ const App = () => {
                       data-ad-format="auto"
                       data-full-width-responsive="true"></ins>
             </div>
-            {/* **FIN: Sección para la Publicidad (Cuadro Lateral Derecho) ** */}
-
-        </div> {/* Cierre del div principal de la aplicación */}
+        </div>
     );
 };
 
