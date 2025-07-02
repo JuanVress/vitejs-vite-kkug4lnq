@@ -284,7 +284,7 @@ const App = () => {
     // --- RENDERIZADO DE LA INTERFAZ ---
     return (
         // Contenedor principal: relative para que los hijos con absolute se posicionen en relación a él
-        // También contiene flex para el layout general (aside, main, y el nuevo bloque de publicidad)
+        // y flex para el layout general (aside, main, y el nuevo bloque de publicidad)
         <div className="min-h-screen flex flex-col md:flex-row bg-[#e6d5c1] font-sans text-[#785d56] relative">
             <style>{`@font-face{font-family:'Fragmentcore';src:url('/fonts/Fragmentcore.otf') format('opentype');} body{font-family:'Fragmentcore',sans-serif;} .custom-scrollbar::-webkit-scrollbar{width:8px;} .custom-scrollbar::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px;} .custom-scrollbar::-webkit-scrollbar-thumb{background:#c6b299;border-radius:10px;} .custom-scrollbar::-webkit-scrollbar-thumb:hover{background:#be4c54;}`}</style>
 
@@ -313,7 +313,7 @@ const App = () => {
                 {/* FIN: Nueva imagen en el historial */}
             </aside>
 
-            <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48 relative"> {/* main es relativo para contener el logo */}
+            <main className="flex-1 p-4 md:p-8 flex flex-col items-center md:items-start md:pr-48 relative"> {/* main es relativo para contener el logo y el contenido principal */}
                 {/* **INICIO: Sección de Logo ** */}
                 {/* Posicionamiento para que esté por encima del contenido principal */}
                 <div className="absolute top-4 right-4 z-50 md:top-8 md:right-8"> {/* Ajusta top/right para móvil */}
@@ -391,7 +391,8 @@ const App = () => {
             {/* **INICIO: Sección para la Publicidad (Cuadro Lateral Derecho - Fuera de 'main') ** */}
             {/* Este div está ahora al mismo nivel que <aside> y <main> para un posicionamiento más flexible relativo al contenedor principal */}
             {/* Ajustado 'top' a md:top-[25rem] (400px) para que quede por debajo del logo y separado de los recuadros centrales */}
-            {/* Puedes ajustar 'top' aún más si la posición no es la deseada */}
+            {/* Puedes ajustar 'top' y 'right' aún más si la posición no es la deseada */}
+            {/* Nota: el min-h-screen del div padre es crucial para que el posicionamiento absoluto funcione correctamente */}
             <div className="ad-container-right absolute top-[20rem] md:top-[25rem] right-4 md:right-8 w-28 h-64 md:w-48 md:h-96 bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
                  <ins className="adsbygoogle"
                       style={{ display: 'block', width: '100%', height: '100%' }}
@@ -402,7 +403,7 @@ const App = () => {
             </div>
             {/* **FIN: Sección para la Publicidad (Cuadro Lateral Derecho) ** */}
 
-        </div> {/* Cierre del div principal */}
+        </div> {/* Cierre del div principal de la aplicación */}
     );
 };
 
