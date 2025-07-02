@@ -4,7 +4,7 @@ import type { FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import type { Auth } from 'firebase/auth';
 import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp, deleteDoc, orderBy } from 'firebase/firestore';
-import type { Firestore } from 'firestore';
+import type { Firestore } from 'firebase/firestore'; // <-- CORRECCIÓN APLICADA AQUÍ
 
 // --- Importaciones de imágenes ---
 import logo from '/assets/logo.png';
