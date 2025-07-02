@@ -4,7 +4,7 @@ import type { FirebaseApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import type { Auth } from 'firebase/auth';
 import { getFirestore, doc, addDoc, onSnapshot, collection, query, serverTimestamp, deleteDoc, orderBy } from 'firebase/firestore';
-import type { Firestore } from 'firebase/firestore'; // <-- CORRECCIÓN APLICADA AQUÍ
+import type { Firestore } from 'firebase/firestore';
 
 // --- Importaciones de imágenes ---
 import logo from '/assets/logo.png';
@@ -353,7 +353,8 @@ const App = () => {
                 </div>
             </main>
 
-            <div className="ad-container-right absolute top-[25rem] md:top-[28rem] right-4 md:right-8 w-28 h-64 md:w-48 md:h-96 bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
+            {/* --- BLOQUE DE PUBLICIDAD LATERAL MODIFICADO --- */}
+            <div className="ad-container-right absolute top-[24rem] md:top-[26rem] right-2 md:right-4 w-28 h-64 md:w-48 md:h-96 bg-[#fff4e3] rounded-xl shadow-md text-center flex items-center justify-center overflow-hidden">
                  <ins className="adsbygoogle"
                       style={{ display: 'block', width: '100%', height: '100%' }}
                       data-ad-client="pub-3121401058916322"
