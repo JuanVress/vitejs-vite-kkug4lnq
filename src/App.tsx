@@ -41,6 +41,12 @@ const firebaseConfig = {
 
 const appId = "linguo-app-produccion";
 
+// --- LÍMITE DE TRADUCCIONES GRATUITAS POR USUARIO ---
+// NOTA IMPORTANTE: Para una solución de producción segura y a prueba de manipulaciones,
+// este conteo debería gestionarse en un backend (ej. Firebase Cloud Functions, Firestore Security Rules)
+// y no solo en el cliente (localStorage), ya que es fácilmente manipulable por el usuario.
+const MAX_FREE_TRANSLATIONS = 10; 
+
 // --- COMPONENTE PRINCIPAL ---
 const App = () => {
     // --- ESTADOS CON TIPOS EXPLÍCITOS ---
@@ -58,6 +64,8 @@ const App = () => {
     const [userId, setUserId] = useState<string | null>(null);
     const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
     const [translationHistory, setTranslationHistory] = useState<HistoryItem[]>([]);
+    // Nuevo estado para el conteo de traducciones
+    const [translationCount, setTranslationCount] = useState<number>(0); 
 
     const languages = [
         { code: 'en', name: 'Inglés' }, { code: 'es', name: 'Español' }, { code: 'fr', name: 'Francés' },
@@ -75,6 +83,10 @@ const App = () => {
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
                     setUserId(user.uid);
+                    // Cargar el conteo de traducciones del localStorage al iniciar sesión (o anónimamente)
+                    // Utiliza el userId para hacer el conteo específico por usuario (incluso anónimo)
+                    const savedCount = localStorage.getItem(`translationCount_${user.uid}`);
+                    setTranslationCount(savedCount ? parseInt(savedCount, 10) : 0);
                 } else {
                     await signInAnonymously(auth).catch(console.error);
                 }
@@ -150,14 +162,28 @@ const App = () => {
 
     // --- FUNCIONES ---
     const handleTranslate = async () => {
-        if (!inputText.trim()) return setError('Por favor, ingresa texto para traducir.');
+        if (!inputText.trim()) {
+            setError('Por favor, ingresa texto para traducir.');
+            return;
+        }
+
+        // --- LÓGICA DEL LÍMITE DE TRADUCCIONES ---
+        // Se deshabilita el botón con 'disabled={... || translationCount >= MAX_FREE_TRANSLATIONS}'
+        // y se muestra el error directamente aquí antes de hacer la llamada a la API.
+        if (translationCount >= MAX_FREE_TRANSLATIONS) {
+            setError(`Has alcanzado el límite de ${MAX_FREE_TRANSLATIONS} traducciones gratuitas. Por favor, considera registrarte o actualizar tu plan para traducciones ilimitadas.`);
+            return; // Detiene la ejecución si el límite se ha excedido
+        }
+        // --- FIN LÓGICA DEL LÍMITE DE TRADUCCIONES ---
+
         setIsLoading(true);
-        setError('');
-        setTranslatedText('');
+        setError(''); // Limpia errores previos al iniciar una nueva traducción
+        setTranslatedText(''); // Limpia la traducción previa
 
         try {
             const apiKey = "AIzaSyC4mPun5tdNyxhh8Be3vcLi0SgRc4c3oJE";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
+            // *** CAMBIO AQUÍ: Usando Gemini 2.5 Pro ***
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${apiKey}`; 
             const sourceLangName = languages.find(l => l.code === sourceLanguage)?.name;
             const targetLangName = languages.find(l => l.code === targetLanguage)?.name;
             const prompt = `Traduce de ${sourceLangName} a ${targetLangName}. Responde únicamente con la traducción directa, sin añadir ninguna palabra, explicación o contexto adicional. Texto a traducir: "${inputText}"`;
@@ -180,14 +206,20 @@ const App = () => {
                         originalText: inputText, translatedText: text, sourceLang: sourceLanguage,
                         targetLang: targetLanguage, timestamp: serverTimestamp(),
                     });
+                    // Incrementar el conteo de traducciones y guardarlo en localStorage
+                    // Solo incrementa si la traducción fue exitosa y se guardó en el historial
+                    const newCount = translationCount + 1;
+                    setTranslationCount(newCount);
+                    localStorage.setItem(`translationCount_${userId}`, newCount.toString());
                 }
             } else {
                  throw new Error('No se pudo obtener una traducción de la respuesta de la API.');
             }
-        } catch (err: unknown) {
+        } catch (err: unknown) { 
             const errorMessage = err instanceof Error ? err.message : String(err);
             console.error('Error al traducir:', err);
             setError(`Error de traducción: ${errorMessage}`);
+            // Si hay un error en la API, no se cuenta para el límite gratuito
         } finally {
             setIsLoading(false);
         }
@@ -196,12 +228,12 @@ const App = () => {
     const handleSpeak = () => {
         if (!translatedText || !window.speechSynthesis) return;
         if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
-
+        
         setIsSpeaking(true);
         const utterance = new SpeechSynthesisUtterance(translatedText);
         utterance.lang = targetLanguage;
         const foundVoice = voices.find(v => v.lang.startsWith(targetLanguage));
-        utterance.voice = foundVoice || null;
+        utterance.voice = foundVoice || null; 
         utterance.onend = () => setIsSpeaking(false);
         utterance.onerror = () => {
             setError('Error al reproducir el audio.');
@@ -209,7 +241,7 @@ const App = () => {
         };
         window.speechSynthesis.speak(utterance);
     };
-
+    
     const handleSpeechInput = () => {
         if (!recognition.current) return setError('El reconocimiento de voz no está disponible.');
         if (isListening) {
@@ -223,6 +255,12 @@ const App = () => {
         if (!db || !userId) return;
         try {
             await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/translationHistory`, itemId));
+            // Opcional: Si eliminas una traducción del historial, podrías querer "devolver" una traducción al contador.
+            // Para fines de este límite "gratuito", lo más común es que no se devuelva.
+            // Si quisieras, descomenta las siguientes líneas:
+            // const newCount = Math.max(0, translationCount - 1);
+            // setTranslationCount(newCount);
+            // localStorage.setItem(`translationCount_${userId}`, newCount.toString());
         } catch (err) { setError("Error al eliminar la traducción."); }
     };
 
@@ -305,10 +343,21 @@ const App = () => {
                             </div>
                         </div>
                     </div>
-                    <button onClick={handleTranslate} disabled={isLoading || !inputText.trim() || !isAuthReady} className={`w-full py-2 px-4 rounded-xl text-white font-bold text-lg shadow-md transition-all ${isLoading || !inputText.trim() || !isAuthReady ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#be4c54] hover:bg-[#a83b42] transform hover:scale-105 active:scale-95'} mt-4`}>
+                    <button onClick={handleTranslate} disabled={isLoading || !inputText.trim() || !isAuthReady || translationCount >= MAX_FREE_TRANSLATIONS} className={`w-full py-2 px-4 rounded-xl text-white font-bold text-lg shadow-md transition-all ${isLoading || !inputText.trim() || !isAuthReady || translationCount >= MAX_FREE_TRANSLATIONS ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#be4c54] hover:bg-[#a83b42] transform hover:scale-105 active:scale-95'} mt-4`}>
                         {isLoading ? (<div className="flex items-center justify-center"><svg className="animate-spin h-4 w-4 mr-2 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Traduciendo...</div>) : ('Traducir')}
                     </button>
                     {error && (<div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mt-4 text-sm" role="alert"><strong className="font-bold">¡Error!</strong><span className="block sm:inline"> {error}</span></div>)}
+                    {/* Indicador de traducciones restantes/usadas */}
+                    {userId && translationCount < MAX_FREE_TRANSLATIONS && (
+                        <p className="text-center text-sm text-[#785d56] mt-3">
+                            Traducciones gratuitas restantes: {MAX_FREE_TRANSLATIONS - translationCount} de {MAX_FREE_TRANSLATIONS}
+                        </p>
+                    )}
+                    {userId && translationCount >= MAX_FREE_TRANSLATIONS && (
+                        <p className="text-center text-sm text-red-600 mt-3 font-semibold">
+                            Has usado todas tus traducciones gratuitas. ¡Gracias por usar Linguo! Por favor, actualiza tu plan para traducciones ilimitadas.
+                        </p>
+                    )}
                 </div>
 
                 {/* **INICIO: Sección para la Publicidad ** */}
